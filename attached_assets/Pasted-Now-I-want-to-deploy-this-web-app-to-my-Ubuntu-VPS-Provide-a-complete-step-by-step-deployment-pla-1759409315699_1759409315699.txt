@@ -1,0 +1,20 @@
+Now, I want to deploy this web app to my Ubuntu VPS. Provide a complete, step-by-step deployment plan and carry it out accordingly. Use clear, descriptive steps. The plan must prioritize isolation and guarantee zero conflicts with what’s already running which is attached as PDF.
+
+Do NOT alter or restart any existing apps, domains, or certificates.
+
+PRIMARY GOALS
+1) Deploy the new app in a fully isolated way (its own user/service, its own data and logs, its own domain/subdomain, and its own internal port that is NOT one of the reserved ports above).
+2) Expose it through the existing NGINX reverse proxy pattern using a unique domain/subdomain (no overlap with the domains listed above).
+3) Enable HTTPS for the new domain without touching certificates for existing domains.
+4) Wire it to the EXTERNAL SingleStore database using adjustable settings (host, port, db name, user, password, SSL mode, and pool sizes) that I can change later without code changes.
+
+SINGLESTORE (EXTERNAL DB) REQUIREMENTS
+- Provide a clear place to set these values: DB HOST, DB PORT, DB NAME, DB USER, DB PASSWORD, SSL/TLS options, and connection pool limits.
+-make sure you use the PEM certificate for SSL connection and add it to the config 
+- Assume these values may change. Make sure I can update them later without changing code (e.g., through per-app variables/secrets). Document exactly how I will update them and safely restart just the NEW app without affecting others.
+- Add a readiness/health step so the app won’t start serving until it can reach the database (and fails gracefully if credentials are wrong).
+- Include a short rollback plan if new DB settings break the app.
+
+The name of the webapp: partnersystems_main
+The name of the domain (URL):partnersystems.online (right now it redirects to https://maxmetrics.partnersystems.online/ using cloudflare, I will remove this rule on cloudflare)
+Use local server SSL certificate, not cloudflare certificate, thoigh I will use cloudflare as domain pointer

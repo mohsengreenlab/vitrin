@@ -1,0 +1,139 @@
+PartnerSystems Main - Deployment Checklist
+==========================================
+
+PRE-DEPLOYMENT
+--------------
+[ ] VPS access confirmed (SSH as root)
+[ ] Domain partnersystems.online DNS points to VPS IP
+[ ] Cloudflare set to "DNS Only" (gray cloud) - for SSL setup
+[ ] SingleStore credentials ready:
+    [ ] Host
+    [ ] Port
+    [ ] Username
+    [ ] Password
+    [ ] Database name
+[ ] Port 3008 verified available (not in use)
+[ ] Node.js 18+ or 20+ installed
+[ ] Nginx installed and running
+[ ] PM2 installed globally
+[ ] Certbot installed
+
+DEPLOYMENT
+----------
+[ ] Upload application package to VPS
+[ ] Extract to /root/partnersystems_main_deploy
+[ ] Run: sudo bash deployment/scripts/deploy.sh
+[ ] Script completes without errors
+[ ] User 'partnersystems_main' created
+[ ] Directory /home/partnersystems_main/app exists
+[ ] SSL certificate copied to certs/singlestore_bundle.pem
+
+CONFIGURATION
+-------------
+[ ] Edit .env file: sudo nano /home/partnersystems_main/app/.env
+[ ] Set SINGLESTORE_HOST
+[ ] Set SINGLESTORE_PORT
+[ ] Set SINGLESTORE_USER
+[ ] Set SINGLESTORE_PASSWORD
+[ ] Set SINGLESTORE_DATABASE
+[ ] Generate and set SESSION_SECRET (use: openssl rand -base64 32)
+[ ] Verify SSL_CERT_PATH points to certificate
+[ ] Save and close .env
+
+DATABASE VALIDATION
+-------------------
+[ ] Run test: cd /home/partnersystems_main/app
+[ ] Run: sudo -u partnersystems_main node deployment/scripts/test-db.js
+[ ] Test shows: "✓ Connection established"
+[ ] Test shows: "✓ Test query successful"
+[ ] Test shows: "✓ Database health check PASSED"
+[ ] No error messages displayed
+
+APPLICATION START
+-----------------
+[ ] Restart app: sudo -u partnersystems_main pm2 restart partnersystems_main
+[ ] Check status: sudo -u partnersystems_main pm2 status
+[ ] Status shows: "online" (not "errored" or "stopped")
+[ ] View logs: sudo -u partnersystems_main pm2 logs partnersystems_main --lines 50
+[ ] Logs show successful database connection
+[ ] Logs show "serving on port 5000" (internal Express)
+[ ] No error messages in logs
+
+NGINX & SSL
+-----------
+[ ] Test Nginx: sudo nginx -t
+[ ] Output shows: "syntax is ok" and "test is successful"
+[ ] Reload Nginx: sudo systemctl reload nginx
+[ ] Check certificates: sudo certbot certificates
+[ ] Certificate exists for partnersystems.online
+[ ] Certificate shows valid expiry date (future)
+
+VERIFICATION
+------------
+[ ] Test local: curl -I http://localhost:3008
+[ ] Returns: 200 OK
+[ ] Test HTTP redirect: curl -I http://partnersystems.online
+[ ] Returns: 301 redirect to HTTPS
+[ ] Test HTTPS: curl -I https://partnersystems.online
+[ ] Returns: 200 OK
+[ ] Open in browser: https://partnersystems.online
+[ ] Page loads successfully
+[ ] SSL certificate valid (lock icon in browser)
+[ ] No console errors in browser developer tools
+
+POST-DEPLOYMENT
+---------------
+[ ] Enable Cloudflare proxy (if desired):
+    [ ] Set DNS to "Proxied" (orange cloud)
+    [ ] Set SSL mode to "Full (strict)"
+    [ ] Test site still loads
+[ ] Document .env backup location
+[ ] Test update script: sudo bash /home/partnersystems_main/app/deployment/scripts/update-config.sh
+[ ] Test rollback script: sudo bash /home/partnersystems_main/app/deployment/scripts/rollback.sh
+[ ] Verify no impact on other apps:
+    [ ] FreePaper still accessible
+    [ ] Kerit still accessible
+    [ ] SmartCover still accessible
+    [ ] TrustLine still accessible
+    [ ] TopTeachers still accessible
+    [ ] PartnerSystems still accessible
+    [ ] SiahRokh still accessible
+
+SECURITY CHECK
+--------------
+[ ] .env file permissions: 600 (owner only)
+[ ] .env file owner: partnersystems_main
+[ ] App runs as non-root user
+[ ] HTTP redirects to HTTPS
+[ ] SSL certificate valid and trusted
+[ ] Database connection uses SSL/TLS
+
+OPTIONAL
+--------
+[ ] Enable UFW firewall if not already active:
+    [ ] sudo ufw allow OpenSSH
+    [ ] sudo ufw allow 'Nginx Full'
+    [ ] sudo ufw enable
+[ ] Setup monitoring/alerts for app
+[ ] Configure log rotation
+[ ] Schedule regular backups
+
+TROUBLESHOOTING CONTACTS
+-------------------------
+SingleStore Portal: https://portal.singlestore.com/
+Certbot Docs: https://certbot.eff.org/
+PM2 Docs: https://pm2.keymetrics.io/
+
+ROLLBACK PLAN (if needed)
+--------------------------
+1. Restore config: sudo bash /home/partnersystems_main/app/deployment/scripts/rollback.sh
+2. If still broken, stop app: sudo -u partnersystems_main pm2 stop partnersystems_main
+3. Disable Nginx site: sudo rm /etc/nginx/sites-enabled/partnersystems_main
+4. Reload Nginx: sudo systemctl reload nginx
+5. Remove user: sudo userdel -r partnersystems_main
+
+==========================================
+Deployment Date: _____________________
+Deployed By: _________________________
+Notes: ________________________________
+==========================================
