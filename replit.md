@@ -108,3 +108,31 @@ Preferred communication style: Simple, everyday language.
 - Replit deployment with environment variables for database credentials
 - Static asset serving via Vite in production
 - Development mode with HMR and hot module replacement
+
+### Deployment Package
+
+**VPS Deployment Structure** (Located in `deployment/` directory)
+- Manual step-by-step deployment approach (not automated scripts)
+- Complete isolation on Ubuntu VPS with dedicated user and port (3008)
+- Designed for zero conflicts with existing applications
+
+**Deployment Files**
+- `docs/DEPLOYMENT_GUIDE.md` - Comprehensive 12-step manual deployment guide with test commands after each checkpoint
+- `DEPLOYMENT_CHECKLIST.txt` - Step-by-step checklist for tracking progress
+- `README.md` - Overview and quick reference
+- `configs/` - PM2 process manager and Nginx configurations
+- `scripts/` - Utility scripts (database health check, config update, rollback)
+
+**Deployment Approach**
+- User runs commands manually step-by-step on Ubuntu terminal
+- Each step includes verification/test commands before proceeding
+- No "black box" automated scripts - full visibility and control
+- Critical checkpoints: database connection test, PM2 status, SSL certificate validation
+
+**Architecture on VPS**
+- Internet → Cloudflare (optional) → Nginx (port 443) → Node.js (port 3008) → SingleStore DB
+- Dedicated system user: `partnersystems_main`
+- Application directory: `/home/partnersystems_main/app`
+- Process management: PM2 with auto-restart
+- Reverse proxy: Nginx with Let's Encrypt SSL
+- Domain: partnersystems.online
