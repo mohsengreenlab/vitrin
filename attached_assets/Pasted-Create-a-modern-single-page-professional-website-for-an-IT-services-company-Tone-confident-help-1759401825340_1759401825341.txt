@@ -1,0 +1,77 @@
+Create a modern, single-page, professional website for an IT services company. Tone: confident, helpful, and marketing-driven. Visuals: AI-generated business imagery (hero + section headers) that feels premium and tech-forward. No metrics or vanity stats.
+
+Core requirements
+
+Hero: Big headline “Pay only for what matters to you!” + short subhead about modular, bespoke solutions. Primary CTA “Get a Quote” + secondary “See Our Work”. Sticky top nav with smooth scroll.
+
+Design: Clean, enterprise aesthetic; responsive; accessible; dark-on-light with accent color; generous whitespace; subtle gradients/dividers.
+
+Motion: Fade-in on scroll for each section and card; smooth anchor scrolling; micro-interactions on hover.
+
+Structure (sections):
+
+Hero (AI image), CTAs
+
+Why Modular? 3–4 concise benefits (custom-fit, faster delivery, budget control, future-ready)
+
+Offerings (four pillars as below, shown as elegant cards/grids)
+
+How We Work (Discover → Design → Build → Launch → Support)
+
+Tech & Integrations (logos/stack list—no partner claims)
+
+CTA + Contact (short form: name, email, message; note: “pay-as-you-go, no lock-ins”)
+
+Footer (links, email, city, socials)
+
+Exact copy to include in Offerings
+
+A — Business & Productivity Tools, tailored to your custom needs:
+
+Custom CRM/ERP Systems – customer tracking, invoicing, sales pipelines.
+
+Custom Project & Task Management Tools – Kanban boards, to-do apps, resource planning.
+
+Custom Inventory & Supply Chain Management – stock levels, purchase orders, vendor portals.
+
+Knowledge Bases & Internal Wikis – documentation platforms with search & collaboration.
+
+B — Data & Storage Solutions, as much space as you feel comfortable with:
+
+Database Management Interfaces – lightweight admin dashboards for PostgreSQL/MySQL.
+
+File Management & Sharing – cloud-like storage with user roles and permissions.
+
+Data Visualization Dashboards – charts, KPIs, and real-time reporting tools.
+
+Scheduling & Booking Systems – appointment booking, class scheduling, calendar sync.
+
+C — Communication & Collaboration tailored to your needs:
+
+Chat & Messaging Apps – team chat, customer support chatbots, community spaces.
+
+Collaboration Workspaces – shared whiteboards, document editing.
+
+D — Consumer-Facing Applications, to care about your unique customers:
+
+Winning websites and landing pages
+
+E-commerce Platforms – storefronts, shopping carts, order management.
+
+Additional instructions
+
+Use AI-generated, royalty-free images that match each section (no people headshots required).
+
+Add concise benefit blurbs under each card; no client counts, revenue figures, or testimonials.
+
+Include SEO basics (title, meta description, open graph).
+
+Performance-friendly (lazy-load images), clean typography, clear CTAs.
+
+Contact form should validate inputs and show a friendly success message.
+
+Name of my business: Partner Systems (just use this name, no image for logo needed)
+
+
+
+You are not allowed to use postgreSQL in any case or any local storage, especially for contact-us forms. Use SingleStore MySQL database. Ask for the secrets
