@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Search, Pencil, Code, Rocket, Headphones, ArrowRight } from 'lucide-react';
-import workflowImage from '@assets/generated_images/Work_process_flow_imagery_4187b386.png';
 
 const steps = [
   {
@@ -70,15 +69,6 @@ export default function HowWeWorkSection() {
           <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
             A proven process that delivers results. From discovery to ongoing support.
           </p>
-        </div>
-
-        <div className="mb-16">
-          <img
-            src={workflowImage}
-            alt="Work process flow"
-            className="w-full h-64 md:h-80 object-cover rounded-2xl"
-            loading="lazy"
-          />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4 relative">
