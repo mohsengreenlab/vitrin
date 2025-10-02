@@ -1,25 +1,21 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-
-const contactSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters'),
-  email: z.string().email('Please enter a valid email address'),
-  message: z.string().min(10, 'Message must be at least 10 characters'),
-});
-
-type ContactFormData = z.infer<typeof contactSchema>;
+import { insertContactSchema, type InsertContact } from '@shared/schema';
+import { apiRequest } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
 
 export default function ContactSection() {
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const { toast } = useToast();
 
-  const form = useForm<ContactFormData>({
-    resolver: zodResolver(contactSchema),
+  const form = useForm<InsertContact>({
+    resolver: zodResolver(insertContactSchema),
     defaultValues: {
       name: '',
       email: '',
@@ -27,11 +23,31 @@ export default function ContactSection() {
     },
   });
 
-  const onSubmit = async (data: ContactFormData) => {
-    console.log('Form submitted:', data);
-    setIsSubmitted(true);
-    form.reset();
-    setTimeout(() => setIsSubmitted(false), 5000);
+  const mutation = useMutation({
+    mutationFn: async (data: InsertContact) => {
+      const res = await apiRequest('POST', '/api/contacts', data);
+      return await res.json();
+    },
+    onSuccess: () => {
+      setIsSubmitted(true);
+      form.reset();
+      toast({
+        title: "Message sent!",
+        description: "We'll get back to you within 24 hours.",
+      });
+      setTimeout(() => setIsSubmitted(false), 5000);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send message. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onSubmit = async (data: InsertContact) => {
+    mutation.mutate(data);
   };
 
   return (
@@ -120,10 +136,10 @@ export default function ContactSection() {
                 <Button
                   type="submit"
                   className="w-full rounded-lg py-6 text-lg font-semibold"
-                  disabled={form.formState.isSubmitting}
+                  disabled={mutation.isPending}
                   data-testid="button-submit-contact"
                 >
-                  {form.formState.isSubmitting ? 'Sending...' : 'Send Message'}
+                  {mutation.isPending ? 'Sending...' : 'Send Message'}
                 </Button>
               </form>
             </Form>
