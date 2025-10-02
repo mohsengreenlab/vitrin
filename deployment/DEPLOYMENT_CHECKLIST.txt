@@ -1,139 +1,243 @@
-PartnerSystems Main - Deployment Checklist
-==========================================
+PartnerSystems Main - Manual Deployment Checklist
+================================================
 
-PRE-DEPLOYMENT
---------------
-[ ] VPS access confirmed (SSH as root)
+Use this checklist as you work through the step-by-step deployment guide.
+
+PREREQUISITES
+-------------
+[ ] VPS access confirmed (SSH as root or sudo user)
+[ ] Ubuntu 20.04+ confirmed (uname -a)
 [ ] Domain partnersystems.online DNS points to VPS IP
-[ ] Cloudflare set to "DNS Only" (gray cloud) - for SSL setup
 [ ] SingleStore credentials ready:
     [ ] Host
     [ ] Port
-    [ ] Username
+    [ ] Username  
     [ ] Password
     [ ] Database name
-[ ] Port 3008 verified available (not in use)
-[ ] Node.js 18+ or 20+ installed
-[ ] Nginx installed and running
+[ ] VPS IP whitelisted in SingleStore firewall
+
+STEP 1: PREPARE VPS ENVIRONMENT
+--------------------------------
+[ ] System updated: sudo apt update && sudo apt upgrade -y
+[ ] Node.js 20.x installed
+    [ ] Test: node --version (should show v20.x.x)
 [ ] PM2 installed globally
+    [ ] Test: pm2 --version
+[ ] Nginx installed and running
+    [ ] Test: sudo systemctl status nginx (should show active)
+    [ ] Test: sudo nginx -t (should show syntax ok)
 [ ] Certbot installed
+    [ ] Test: certbot --version
+[ ] Port 3008 available
+    [ ] Test: sudo netstat -tlnp | grep :3008 (should return nothing)
 
-DEPLOYMENT
-----------
-[ ] Upload application package to VPS
-[ ] Extract to /root/partnersystems_main_deploy
-[ ] Run: sudo bash deployment/scripts/deploy.sh
-[ ] Script completes without errors
-[ ] User 'partnersystems_main' created
-[ ] Directory /home/partnersystems_main/app exists
-[ ] SSL certificate copied to certs/singlestore_bundle.pem
+STEP 2: CREATE USER AND DIRECTORIES
+------------------------------------
+[ ] User created: sudo useradd -m -s /bin/bash partnersystems_main
+    [ ] Test: id partnersystems_main (should show uid and gid)
+[ ] Directories created:
+    [ ] /home/partnersystems_main/app
+    [ ] /home/partnersystems_main/logs
+    [ ] /home/partnersystems_main/app/certs
+    [ ] Test: ls -la /home/partnersystems_main/
 
-CONFIGURATION
--------------
-[ ] Edit .env file: sudo nano /home/partnersystems_main/app/.env
-[ ] Set SINGLESTORE_HOST
-[ ] Set SINGLESTORE_PORT
-[ ] Set SINGLESTORE_USER
-[ ] Set SINGLESTORE_PASSWORD
-[ ] Set SINGLESTORE_DATABASE
-[ ] Generate and set SESSION_SECRET (use: openssl rand -base64 32)
-[ ] Verify SSL_CERT_PATH points to certificate
-[ ] Save and close .env
+STEP 3: UPLOAD AND INSTALL APPLICATION
+---------------------------------------
+[ ] Archive created on local machine
+    [ ] Test: ls -lh partnersystems_main.tar.gz
+[ ] Uploaded to VPS /tmp/
+    [ ] Test: ls -lh /tmp/partnersystems_main.tar.gz
+[ ] Extracted to /home/partnersystems_main/app/
+    [ ] Test: ls -la /home/partnersystems_main/app/
+    [ ] Test: find /home/partnersystems_main/app -type f | wc -l (many files)
+[ ] SSL certificate in place (if available)
+    [ ] Test: ls -l /home/partnersystems_main/app/certs/singlestore_bundle.pem
 
-DATABASE VALIDATION
--------------------
-[ ] Run test: cd /home/partnersystems_main/app
-[ ] Run: sudo -u partnersystems_main node deployment/scripts/test-db.js
-[ ] Test shows: "✓ Connection established"
-[ ] Test shows: "✓ Test query successful"
-[ ] Test shows: "✓ Database health check PASSED"
+STEP 4: CONFIGURE APPLICATION
+------------------------------
+[ ] .env file created at /home/partnersystems_main/app/.env
+[ ] SINGLESTORE_HOST set (not placeholder)
+[ ] SINGLESTORE_PORT set (3333 or 3306)
+[ ] SINGLESTORE_USER set (not placeholder)
+[ ] SINGLESTORE_PASSWORD set (not placeholder)
+[ ] SINGLESTORE_DATABASE set (not placeholder)
+[ ] SESSION_SECRET generated and set
+    [ ] Used: openssl rand -base64 32
+[ ] PORT=3008 confirmed
+[ ] NODE_ENV=production confirmed
+[ ] Test: sudo cat /home/partnersystems_main/app/.env | grep SINGLESTORE_HOST
+
+STEP 5: SET PERMISSIONS
+-----------------------
+[ ] Ownership set to partnersystems_main:partnersystems_main
+    [ ] Test: ls -ld /home/partnersystems_main/app
+[ ] Home directory secured (700)
+    [ ] Test: ls -ld /home/partnersystems_main (should show drwx------)
+[ ] .env file secured (600)
+    [ ] Test: ls -l /home/partnersystems_main/app/.env (should show -rw-------)
+[ ] App directory readable (755)
+[ ] Logs directory writable (755)
+
+STEP 6: INSTALL AND BUILD
+-------------------------
+[ ] Dependencies installed: sudo -u partnersystems_main npm install
+    [ ] Test: ls -d /home/partnersystems_main/app/node_modules
+    [ ] Test: ls /home/partnersystems_main/app/node_modules | wc -l (many packages)
+[ ] Application built: sudo -u partnersystems_main npm run build
+    [ ] Test: ls -la /home/partnersystems_main/app/dist
+    [ ] Test: ls -l /home/partnersystems_main/app/dist/public/index.html
+[ ] (Optional) Dev dependencies pruned: npm prune --production
+
+STEP 7: TEST DATABASE (CRITICAL CHECKPOINT)
+--------------------------------------------
+[ ] Database test script executed
+    [ ] cd /home/partnersystems_main/app
+    [ ] sudo -u partnersystems_main node deployment/scripts/test-db.js
+[ ] Test results:
+    [ ] ✓ All required environment variables present
+    [ ] ✓ Connection established
+    [ ] ✓ Test query successful
+    [ ] ✓ Database health check PASSED
 [ ] No error messages displayed
 
-APPLICATION START
------------------
-[ ] Restart app: sudo -u partnersystems_main pm2 restart partnersystems_main
-[ ] Check status: sudo -u partnersystems_main pm2 status
-[ ] Status shows: "online" (not "errored" or "stopped")
-[ ] View logs: sudo -u partnersystems_main pm2 logs partnersystems_main --lines 50
-[ ] Logs show successful database connection
-[ ] Logs show "serving on port 5000" (internal Express)
-[ ] No error messages in logs
+>>> DO NOT PROCEED UNTIL DATABASE TEST PASSES <<<
 
-NGINX & SSL
------------
-[ ] Test Nginx: sudo nginx -t
-[ ] Output shows: "syntax is ok" and "test is successful"
-[ ] Reload Nginx: sudo systemctl reload nginx
-[ ] Check certificates: sudo certbot certificates
-[ ] Certificate exists for partnersystems.online
-[ ] Certificate shows valid expiry date (future)
+STEP 8: CONFIGURE PM2
+---------------------
+[ ] PM2 config copied to app directory
+    [ ] Test: cat /home/partnersystems_main/app/ecosystem.config.cjs
+[ ] Application started with PM2
+    [ ] sudo -u partnersystems_main pm2 start ecosystem.config.cjs
+[ ] PM2 status check:
+    [ ] Test: sudo -u partnersystems_main pm2 status
+    [ ] Status shows: partnersystems_main | online
+[ ] PM2 logs show success:
+    [ ] Test: sudo -u partnersystems_main pm2 logs partnersystems_main --lines 30
+    [ ] Logs show: "Successfully connected to SingleStore database"
+    [ ] Logs show: "serving on port 5000" (internal)
+[ ] PM2 configuration saved
+    [ ] sudo -u partnersystems_main pm2 save
+[ ] PM2 startup configured
+    [ ] sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u partnersystems_main --hp /home/partnersystems_main
+[ ] Local app test:
+    [ ] Test: curl -I http://localhost:3008
+    [ ] Should return: HTTP/1.1 200 OK
 
-VERIFICATION
-------------
-[ ] Test local: curl -I http://localhost:3008
-[ ] Returns: 200 OK
-[ ] Test HTTP redirect: curl -I http://partnersystems.online
-[ ] Returns: 301 redirect to HTTPS
-[ ] Test HTTPS: curl -I https://partnersystems.online
-[ ] Returns: 200 OK
-[ ] Open in browser: https://partnersystems.online
-[ ] Page loads successfully
-[ ] SSL certificate valid (lock icon in browser)
-[ ] No console errors in browser developer tools
+STEP 9: CONFIGURE NGINX
+-----------------------
+[ ] Nginx config copied
+    [ ] sudo cp .../nginx-partnersystems.conf /etc/nginx/sites-available/partnersystems_main
+    [ ] Test: cat /etc/nginx/sites-available/partnersystems_main | grep server_name
+[ ] Site enabled (symlink created)
+    [ ] sudo ln -sf /etc/nginx/sites-available/partnersystems_main /etc/nginx/sites-enabled/
+    [ ] Test: ls -l /etc/nginx/sites-enabled/partnersystems_main
+[ ] Nginx configuration test:
+    [ ] Test: sudo nginx -t
+    [ ] Output: "syntax is ok" and "test is successful"
+[ ] Nginx reloaded
+    [ ] sudo systemctl reload nginx
+    [ ] Test: sudo systemctl status nginx (should show active)
+[ ] HTTP access test:
+    [ ] Test: curl -I http://partnersystems.online
 
-POST-DEPLOYMENT
----------------
-[ ] Enable Cloudflare proxy (if desired):
-    [ ] Set DNS to "Proxied" (orange cloud)
-    [ ] Set SSL mode to "Full (strict)"
-    [ ] Test site still loads
-[ ] Document .env backup location
-[ ] Test update script: sudo bash /home/partnersystems_main/app/deployment/scripts/update-config.sh
-[ ] Test rollback script: sudo bash /home/partnersystems_main/app/deployment/scripts/rollback.sh
-[ ] Verify no impact on other apps:
-    [ ] FreePaper still accessible
-    [ ] Kerit still accessible
-    [ ] SmartCover still accessible
-    [ ] TrustLine still accessible
-    [ ] TopTeachers still accessible
-    [ ] PartnerSystems still accessible
-    [ ] SiahRokh still accessible
+STEP 10: CONFIGURE SSL CERTIFICATE
+-----------------------------------
+[ ] DNS verification:
+    [ ] Test: dig partnersystems.online +short (should show VPS IP)
+    [ ] Test: dig www.partnersystems.online +short (should show VPS IP)
+[ ] Cloudflare disabled (if using):
+    [ ] Set to "DNS Only" (gray cloud) for both partnersystems.online and www
+    [ ] Wait 2-3 minutes
+    [ ] Test: dig partnersystems.online +short (should be VPS IP, not Cloudflare)
+[ ] SSL certificate obtained:
+    [ ] sudo certbot --nginx -d partnersystems.online -d www.partnersystems.online
+    [ ] Email address provided
+    [ ] Terms accepted
+    [ ] Option 2 selected (redirect HTTP to HTTPS)
+[ ] Certificate verification:
+    [ ] Test: sudo certbot certificates
+    [ ] Shows partnersystems.online with future expiry date
+    [ ] Test: sudo ls -l /etc/letsencrypt/live/partnersystems.online/
+[ ] HTTPS access test:
+    [ ] Test: curl -I https://partnersystems.online (should show HTTP/2 200)
+    [ ] Test: curl -I http://partnersystems.online (should show 301 redirect)
+[ ] Browser test:
+    [ ] Open: https://partnersystems.online
+    [ ] Green lock icon visible
+    [ ] Certificate valid
 
-SECURITY CHECK
---------------
-[ ] .env file permissions: 600 (owner only)
-[ ] .env file owner: partnersystems_main
-[ ] App runs as non-root user
-[ ] HTTP redirects to HTTPS
-[ ] SSL certificate valid and trusted
-[ ] Database connection uses SSL/TLS
+STEP 11: RE-ENABLE CLOUDFLARE (OPTIONAL)
+-----------------------------------------
+[ ] Cloudflare proxy enabled (if desired):
+    [ ] Set to "Proxied" (orange cloud) for both domains
+    [ ] SSL/TLS mode set to "Full (strict)"
+    [ ] Test: curl -I https://partnersystems.online (still works)
+    [ ] Browser test: site still loads
 
-OPTIONAL
---------
-[ ] Enable UFW firewall if not already active:
-    [ ] sudo ufw allow OpenSSH
-    [ ] sudo ufw allow 'Nginx Full'
-    [ ] sudo ufw enable
-[ ] Setup monitoring/alerts for app
-[ ] Configure log rotation
-[ ] Schedule regular backups
+STEP 12: FINAL VERIFICATION
+----------------------------
+[ ] PM2 status healthy:
+    [ ] Test: sudo -u partnersystems_main pm2 status
+    [ ] Shows: partnersystems_main | online | 0 restarts
+[ ] PM2 logs clean:
+    [ ] Test: sudo -u partnersystems_main pm2 logs partnersystems_main --lines 50 --nostream
+    [ ] No errors visible
+[ ] Database connection verified:
+    [ ] Test: cd /home/partnersystems_main/app
+    [ ] Test: sudo -u partnersystems_main node deployment/scripts/test-db.js
+    [ ] Shows: ✓ Database health check PASSED
+[ ] Web access verified:
+    [ ] Test: curl -I http://localhost:3008 (200 OK)
+    [ ] Test: curl -I https://partnersystems.online (HTTP/2 200)
+    [ ] Test: curl -I https://www.partnersystems.online (works)
+[ ] SSL certificate valid:
+    [ ] Test: sudo certbot certificates | grep partnersystems.online -A 5
+    [ ] Shows expiry ~90 days in future
+[ ] Other apps not affected:
+    [ ] Test: sudo netstat -tlnp | grep -E ':(8000|3001|3002|3003|3004|3005|3006|3007|3008)'
+    [ ] All expected ports visible
+[ ] Browser final test:
+    [ ] Open: https://partnersystems.online
+    [ ] Page loads successfully
+    [ ] SSL valid (green lock)
+    [ ] No console errors (F12)
+    [ ] Application functions correctly
 
-TROUBLESHOOTING CONTACTS
--------------------------
-SingleStore Portal: https://portal.singlestore.com/
-Certbot Docs: https://certbot.eff.org/
-PM2 Docs: https://pm2.keymetrics.io/
+POST-DEPLOYMENT VERIFICATION
+-----------------------------
+[ ] Test utility scripts:
+    [ ] Database test: works
+    [ ] Update config script: accessible
+    [ ] Rollback script: accessible
+[ ] Document backup locations:
+    [ ] .env backups at: /home/partnersystems_main/app/.env.backup.*
+[ ] Maintenance commands documented and saved
+[ ] All other apps verified still running:
+    [ ] FreePaper (8000)
+    [ ] Kerit (3001, 3002)
+    [ ] TrustLine (3003)
+    [ ] SmartCover (3004)
+    [ ] TopTeachers (3005)
+    [ ] PartnerSystems (3006)
+    [ ] SiahRokh (3007)
 
-ROLLBACK PLAN (if needed)
---------------------------
-1. Restore config: sudo bash /home/partnersystems_main/app/deployment/scripts/rollback.sh
-2. If still broken, stop app: sudo -u partnersystems_main pm2 stop partnersystems_main
-3. Disable Nginx site: sudo rm /etc/nginx/sites-enabled/partnersystems_main
-4. Reload Nginx: sudo systemctl reload nginx
-5. Remove user: sudo userdel -r partnersystems_main
+SECURITY VERIFICATION
+---------------------
+[ ] App runs as partnersystems_main user (not root)
+[ ] .env file permissions: 600
+[ ] Home directory permissions: 700
+[ ] Database uses SSL/TLS connection
+[ ] All HTTP redirects to HTTPS
+[ ] Session secret is random (not placeholder)
+[ ] SSL certificate trusted and valid
 
-==========================================
-Deployment Date: _____________________
-Deployed By: _________________________
-Notes: ________________________________
-==========================================
+DEPLOYMENT COMPLETE
+-------------------
+Date: _____________________
+Deployed By: ______________
+Notes: ____________________
+__________________________
+__________________________
+
+Application URL: https://partnersystems.online
+Status: [ ] SUCCESS  [ ] ISSUES (describe): _______________________

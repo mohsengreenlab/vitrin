@@ -1,111 +1,243 @@
-# PartnerSystems Main - VPS Deployment Guide
+# PartnerSystems Main - Manual Step-by-Step Deployment Guide
 
-## Overview
-This guide provides step-by-step instructions to deploy `partnersystems_main` to your Ubuntu VPS with complete isolation from existing applications.
-
-## Pre-Deployment Checklist
-
-### 1. VPS Requirements
-- Ubuntu 20.04 LTS or newer
-- Node.js 18.x or 20.x
-- Nginx installed
-- PM2 installed globally
-- Certbot installed (for SSL)
-- At least 1GB free RAM
-- Port 3008 available (verified not in use)
-
-### 2. Domain Configuration
-- **Domain**: partnersystems.online
-- **DNS**: Must point to your VPS IP address
-- **Cloudflare**: Set to "DNS Only" (gray cloud) during initial SSL setup
-  - After Let's Encrypt certificate is issued, you can enable Cloudflare proxy
-  - Set SSL mode to "Full (strict)" in Cloudflare
-
-### 3. SingleStore Database
-You must have:
-- SingleStore cluster hostname
-- Database name
-- Username and password
-- Port number (usually 3306 or 3333)
-- SSL certificate (singlestore_bundle.pem) - already included
-
-### 4. Existing Apps Inventory
-The deployment will NOT touch these:
-- FreePaper (port 8000)
-- Kerit (ports 3001, 3002)
-- SmartCover (port 3004)
-- TrustLine (port 3003)
-- TopTeachers (port 3005)
-- PartnerSystems (port 3006)
-- SiahRokh (port 3007)
-
-**New app will use port 3008** - guaranteed no conflicts.
+This guide provides manual, step-by-step instructions to deploy `partnersystems_main` to your Ubuntu VPS with complete isolation from existing applications. Each step includes verification/test commands.
 
 ---
 
-## Deployment Steps
+## Prerequisites Checklist
 
-### Step 1: Upload Application to VPS
+Before starting, ensure you have:
+
+- ✓ Ubuntu 20.04 LTS or newer VPS
+- ✓ Root or sudo access
+- ✓ Domain `partnersystems.online` pointing to VPS IP
+- ✓ SingleStore database credentials ready
+- ✓ Port 3008 available
+
+---
+
+## Step 1: Prepare the VPS Environment
+
+### 1.1 Update System Packages
 
 ```bash
-# On your local machine, from the project root:
-# Create a tarball excluding unnecessary files
+sudo apt update
+sudo apt upgrade -y
+```
+
+**Test:**
+```bash
+# Verify no errors occurred
+echo $?
+# Should output: 0
+```
+
+### 1.2 Install Node.js 20.x
+
+```bash
+# Add NodeSource repository
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo bash -
+
+# Install Node.js
+sudo apt-get install -y nodejs
+```
+
+**Test:**
+```bash
+node --version
+# Should output: v20.x.x
+
+npm --version
+# Should output: 10.x.x or higher
+```
+
+### 1.3 Install PM2 Process Manager
+
+```bash
+sudo npm install -g pm2
+```
+
+**Test:**
+```bash
+pm2 --version
+# Should output: 5.x.x or higher
+
+which pm2
+# Should output: /usr/bin/pm2 or similar
+```
+
+### 1.4 Install and Configure Nginx
+
+```bash
+# Install Nginx
+sudo apt-get install -y nginx
+
+# Start and enable Nginx
+sudo systemctl start nginx
+sudo systemctl enable nginx
+```
+
+**Test:**
+```bash
+# Check Nginx status
+sudo systemctl status nginx
+# Should show: active (running)
+
+# Test Nginx config
+sudo nginx -t
+# Should output: syntax is ok, test is successful
+
+# Verify it's listening
+sudo netstat -tlnp | grep :80
+# Should show nginx listening on port 80
+```
+
+### 1.5 Install Certbot for SSL
+
+```bash
+sudo apt-get install -y certbot python3-certbot-nginx
+```
+
+**Test:**
+```bash
+certbot --version
+# Should output: certbot 1.x.x or higher
+```
+
+### 1.6 Verify Port 3008 is Available
+
+```bash
+sudo netstat -tlnp | grep :3008
+```
+
+**Test:**
+```bash
+# Should return nothing (port is free)
+# If something is using port 3008, you'll need to stop it or choose a different port
+```
+
+---
+
+## Step 2: Create Dedicated User and Directory Structure
+
+### 2.1 Create System User
+
+```bash
+sudo useradd -m -s /bin/bash partnersystems_main
+```
+
+**Test:**
+```bash
+# Verify user was created
+id partnersystems_main
+# Should output: uid=... gid=... groups=...
+
+# Verify home directory exists
+ls -ld /home/partnersystems_main
+# Should show directory with partnersystems_main owner
+```
+
+### 2.2 Create Application Directories
+
+```bash
+sudo mkdir -p /home/partnersystems_main/app
+sudo mkdir -p /home/partnersystems_main/logs
+sudo mkdir -p /home/partnersystems_main/app/certs
+```
+
+**Test:**
+```bash
+ls -la /home/partnersystems_main/
+# Should show: app/ and logs/ directories
+```
+
+---
+
+## Step 3: Upload and Install Application
+
+### 3.1 Create Application Archive (On Your Local Machine)
+
+```bash
+# From your project root directory
 tar -czf partnersystems_main.tar.gz \
   --exclude='node_modules' \
   --exclude='.git' \
   --exclude='*.log' \
   .
+```
 
-# Upload to VPS
-scp partnersystems_main.tar.gz root@your-vps-ip:/tmp/
+**Test:**
+```bash
+# Verify archive was created
+ls -lh partnersystems_main.tar.gz
+# Should show file size (several MB)
+```
 
-# SSH into VPS
-ssh root@your-vps-ip
+### 3.2 Upload to VPS
 
-# Extract
+```bash
+# Replace YOUR_VPS_IP with your actual IP
+scp partnersystems_main.tar.gz root@YOUR_VPS_IP:/tmp/
+```
+
+**Test:**
+```bash
+# On VPS, verify upload
+ls -lh /tmp/partnersystems_main.tar.gz
+# Should show the file
+```
+
+### 3.3 Extract Application Files
+
+```bash
+# On VPS
 cd /tmp
-tar -xzf partnersystems_main.tar.gz -C /root/partnersystems_main_deploy
-cd /root/partnersystems_main_deploy
+sudo tar -xzf partnersystems_main.tar.gz -C /home/partnersystems_main/app/
 ```
 
-### Step 2: Run Deployment Script
-
+**Test:**
 ```bash
-# Make sure you're in the project root directory
-cd /root/partnersystems_main_deploy
+# Verify files were extracted
+ls -la /home/partnersystems_main/app/
+# Should show: server/, client/, shared/, package.json, etc.
 
-# Run deployment script (as root)
-sudo bash deployment/scripts/deploy.sh
+# Count files to ensure extraction worked
+find /home/partnersystems_main/app -type f | wc -l
+# Should show many files (hundreds)
 ```
 
-The script will:
-1. ✓ Create dedicated user `partnersystems_main`
-2. ✓ Create isolated directory structure at `/home/partnersystems_main/`
-3. ✓ Install dependencies (Node.js, PM2 if needed)
-4. ✓ Copy application files
-5. ✓ Copy SSL certificate
-6. ✓ Create `.env` template
-7. ✓ Install npm dependencies
-8. ✓ Build the application
-9. ✓ Set secure permissions
-10. ✓ Configure PM2
-11. ✓ Configure Nginx
-12. ✓ Setup Let's Encrypt SSL
-
-### Step 3: Configure Database Credentials
+### 3.4 Copy SSL Certificate
 
 ```bash
-# Edit the environment file
+# If you have the SingleStore SSL certificate
+sudo cp /home/partnersystems_main/app/certs/singlestore_bundle.pem /home/partnersystems_main/app/certs/ 2>/dev/null || echo "SSL cert will be set up later"
+```
+
+**Test:**
+```bash
+# Check if certificate exists
+ls -l /home/partnersystems_main/app/certs/singlestore_bundle.pem
+# Should show the file, or you can add it later
+```
+
+---
+
+## Step 4: Configure Application Environment
+
+### 4.1 Create .env File
+
+```bash
 sudo nano /home/partnersystems_main/app/.env
 ```
 
-**Required Configuration:**
+**Add the following configuration (edit the SingleStore values):**
+
 ```env
 # Application
 NODE_ENV=production
 PORT=3008
 
-# SingleStore Database - EDIT THESE VALUES
+# SingleStore Database - REPLACE WITH YOUR CREDENTIALS
 SINGLESTORE_HOST=svc-xxxxx-xxxx.svc.singlestore.com
 SINGLESTORE_PORT=3333
 SINGLESTORE_USER=your_username
@@ -113,388 +245,715 @@ SINGLESTORE_PASSWORD=your_password
 SINGLESTORE_DATABASE=your_database
 
 # Session Secret - Generate a random string
-SESSION_SECRET=generate_a_long_random_string_here
+SESSION_SECRET=REPLACE_WITH_RANDOM_STRING
 
-# Connection Pool (adjust if needed)
+# Connection Pool
 DB_POOL_SIZE=10
 DB_CONNECTION_TIMEOUT=20000
 
-# SSL Configuration (already set correctly)
+# SSL Configuration
 SSL_CERT_PATH=/home/partnersystems_main/app/certs/singlestore_bundle.pem
-SSL_REJECT_UNAUTHORIZED=true
+SSL_REJECT_UNAUTHORIZED=false
 ```
 
-**To generate a secure session secret:**
+Save and exit (Ctrl+X, Y, Enter)
+
+### 4.2 Generate Secure Session Secret
+
 ```bash
+# Generate a random session secret
 openssl rand -base64 32
 ```
 
-### Step 4: Test Database Connection
+**Copy the output and update SESSION_SECRET in .env file:**
 
 ```bash
-# Test before starting the app
-cd /home/partnersystems_main/app
-sudo -u partnersystems_main node deployment/scripts/test-db.js
+sudo nano /home/partnersystems_main/app/.env
+# Replace SESSION_SECRET value with the generated string
 ```
 
-Expected output:
-```
-✓ All required environment variables present
-✓ Connection established
-✓ Test query successful
-✓ Database health check PASSED
-```
-
-If the test fails, check:
-- Credentials are correct
-- VPS IP is whitelisted in SingleStore
-- Port and host are correct
-- SSL certificate is present
-
-### Step 5: Start the Application
-
+**Test:**
 ```bash
-# Restart with new configuration
-sudo -u partnersystems_main pm2 restart partnersystems_main
+# Verify .env file exists and has content
+sudo cat /home/partnersystems_main/app/.env | grep SINGLESTORE_HOST
+# Should show your SingleStore host
 
-# Check status
-sudo -u partnersystems_main pm2 status
-
-# View logs
-sudo -u partnersystems_main pm2 logs partnersystems_main --lines 50
-```
-
-### Step 6: Verify Nginx and SSL
-
-```bash
-# Test Nginx configuration
-sudo nginx -t
-
-# Reload Nginx
-sudo systemctl reload nginx
-
-# Check SSL certificate
-sudo certbot certificates | grep partnersystems.online
-```
-
-### Step 7: Test the Application
-
-```bash
-# From VPS
-curl -I http://localhost:3008
-# Should return 200 OK
-
-# From browser
-https://partnersystems.online
-# Should load with valid SSL
+sudo cat /home/partnersystems_main/app/.env | grep SESSION_SECRET
+# Should show your session secret (not the placeholder)
 ```
 
 ---
 
-## Post-Deployment Configuration
+## Step 5: Set Permissions
 
-### Enable Cloudflare Proxy (Optional)
+### 5.1 Set Ownership
 
-After Let's Encrypt is working:
+```bash
+sudo chown -R partnersystems_main:partnersystems_main /home/partnersystems_main
+```
+
+**Test:**
+```bash
+ls -ld /home/partnersystems_main/app
+# Should show partnersystems_main partnersystems_main as owner
+
+ls -l /home/partnersystems_main/app/.env
+# Should show partnersystems_main partnersystems_main as owner
+```
+
+### 5.2 Set Secure Permissions
+
+```bash
+# Secure home directory
+sudo chmod 700 /home/partnersystems_main
+
+# App directory readable
+sudo chmod 755 /home/partnersystems_main/app
+
+# Logs directory writable
+sudo chmod 755 /home/partnersystems_main/logs
+
+# .env file secret (only owner can read/write)
+sudo chmod 600 /home/partnersystems_main/app/.env
+
+# SSL certificate readable
+sudo chmod 644 /home/partnersystems_main/app/certs/singlestore_bundle.pem 2>/dev/null || true
+```
+
+**Test:**
+```bash
+# Verify .env is protected
+ls -l /home/partnersystems_main/app/.env
+# Should show: -rw------- (600 permissions)
+
+# Verify home directory is secure
+ls -ld /home/partnersystems_main
+# Should show: drwx------ (700 permissions)
+```
+
+---
+
+## Step 6: Install Dependencies and Build Application
+
+### 6.1 Install Node Modules
+
+```bash
+cd /home/partnersystems_main/app
+sudo -u partnersystems_main npm install
+```
+
+**Test:**
+```bash
+# Verify node_modules was created
+ls -d /home/partnersystems_main/app/node_modules
+# Should show the directory
+
+# Count installed packages
+ls /home/partnersystems_main/app/node_modules | wc -l
+# Should show many packages (hundreds)
+```
+
+### 6.2 Build the Application
+
+```bash
+cd /home/partnersystems_main/app
+sudo -u partnersystems_main npm run build
+```
+
+**Test:**
+```bash
+# Verify build output exists
+ls -la /home/partnersystems_main/app/dist
+# Should show: public/ directory with built files
+
+# Check for index.html
+ls -l /home/partnersystems_main/app/dist/public/index.html
+# Should show the file
+```
+
+### 6.3 Prune Development Dependencies (Optional, for Production)
+
+```bash
+cd /home/partnersystems_main/app
+sudo -u partnersystems_main npm prune --production
+```
+
+**Test:**
+```bash
+# Verify dev dependencies removed (package size should be smaller)
+du -sh /home/partnersystems_main/app/node_modules
+# Compare to previous size
+```
+
+---
+
+## Step 7: Test Database Connection (CRITICAL CHECKPOINT)
+
+### 7.1 Run Database Health Check
+
+```bash
+cd /home/partnersystems_main/app
+sudo -u partnersystems_main node deployment/scripts/test-db.js
+```
+
+**Expected Output:**
+```
+========================================
+SingleStore Database Health Check
+========================================
+
+Checking environment variables...
+✓ All required environment variables present
+
+Database Configuration:
+  Host: svc-xxxxx-xxxx.svc.singlestore.com
+  Port: 3333
+  User: your_username
+  Database: your_database
+  Password: ********
+  SSL Certificate: Found/Not Found
+
+Attempting to connect...
+✓ Connection established
+
+Running test query...
+✓ Test query successful
+
+Database Info:
+  Server Version: x.x.x
+  Current Database: your_database
+  Current User: your_username
+
+========================================
+✓ Database health check PASSED
+========================================
+```
+
+**Troubleshooting if test fails:**
+
+1. **Connection timeout:**
+   ```bash
+   # Check if VPS IP is whitelisted in SingleStore portal
+   curl -4 ifconfig.me
+   # Add this IP to SingleStore firewall rules
+   ```
+
+2. **Authentication failed:**
+   ```bash
+   # Verify credentials in .env
+   sudo nano /home/partnersystems_main/app/.env
+   ```
+
+3. **Database not found:**
+   ```bash
+   # Verify database name is correct
+   # Check SingleStore portal for exact database name
+   ```
+
+**DO NOT PROCEED until database test passes!**
+
+---
+
+## Step 8: Configure PM2 Process Manager
+
+### 8.1 Copy PM2 Configuration
+
+```bash
+sudo cp /home/partnersystems_main/app/deployment/configs/ecosystem.config.cjs /home/partnersystems_main/app/
+```
+
+**Test:**
+```bash
+# Verify config file
+cat /home/partnersystems_main/app/ecosystem.config.cjs | grep partnersystems_main
+# Should show app name configuration
+```
+
+### 8.2 Start Application with PM2
+
+```bash
+# Remove any existing PM2 process
+sudo -u partnersystems_main pm2 delete partnersystems_main 2>/dev/null || true
+
+# Start the application
+cd /home/partnersystems_main/app
+sudo -u partnersystems_main pm2 start ecosystem.config.cjs
+```
+
+**Test:**
+```bash
+# Check PM2 status
+sudo -u partnersystems_main pm2 status
+# Should show: partnersystems_main | online
+
+# Check logs for successful start
+sudo -u partnersystems_main pm2 logs partnersystems_main --lines 30
+# Should show: "Successfully connected to SingleStore database"
+# Should show: "serving on port 5000" (internal Express port)
+```
+
+### 8.3 Save PM2 Configuration
+
+```bash
+sudo -u partnersystems_main pm2 save
+```
+
+**Test:**
+```bash
+# Verify PM2 saved list
+sudo -u partnersystems_main pm2 list
+# Should show partnersystems_main in the list
+```
+
+### 8.4 Configure PM2 Startup Script
+
+```bash
+# Generate startup script
+sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u partnersystems_main --hp /home/partnersystems_main
+```
+
+**Test:**
+```bash
+# Verify PM2 will start on boot
+sudo systemctl status pm2-partnersystems_main
+# Should show: loaded (it will be inactive until reboot, that's OK)
+```
+
+### 8.5 Test Application Locally
+
+```bash
+# Test if app responds on port 3008
+curl -I http://localhost:3008
+```
+
+**Expected Output:**
+```
+HTTP/1.1 200 OK
+...
+```
+
+**If you get "Connection refused":**
+```bash
+# Check PM2 logs for errors
+sudo -u partnersystems_main pm2 logs partnersystems_main --err --lines 50
+```
+
+---
+
+## Step 9: Configure Nginx Reverse Proxy
+
+### 9.1 Copy Nginx Configuration
+
+```bash
+sudo cp /home/partnersystems_main/app/deployment/configs/nginx-partnersystems.conf /etc/nginx/sites-available/partnersystems_main
+```
+
+**Test:**
+```bash
+# Verify config file exists
+cat /etc/nginx/sites-available/partnersystems_main | grep server_name
+# Should show: partnersystems.online www.partnersystems.online
+```
+
+### 9.2 Enable the Site
+
+```bash
+sudo ln -sf /etc/nginx/sites-available/partnersystems_main /etc/nginx/sites-enabled/
+```
+
+**Test:**
+```bash
+# Verify symlink created
+ls -l /etc/nginx/sites-enabled/partnersystems_main
+# Should show: -> /etc/nginx/sites-available/partnersystems_main
+```
+
+### 9.3 Test Nginx Configuration
+
+```bash
+sudo nginx -t
+```
+
+**Expected Output:**
+```
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+```
+
+**If test fails:**
+```bash
+# Check for syntax errors
+sudo nginx -t
+# Fix any errors in the config file
+sudo nano /etc/nginx/sites-available/partnersystems_main
+```
+
+### 9.4 Reload Nginx
+
+```bash
+sudo systemctl reload nginx
+```
+
+**Test:**
+```bash
+# Verify Nginx is running
+sudo systemctl status nginx
+# Should show: active (running)
+
+# Test HTTP access (will be HTTP, not HTTPS yet)
+curl -I http://partnersystems.online
+# Should show: 200 OK or 301/302 redirect
+```
+
+---
+
+## Step 10: Configure SSL Certificate with Let's Encrypt
+
+### 10.1 Verify DNS is Pointing to Your VPS
+
+```bash
+# Check DNS resolution
+dig partnersystems.online +short
+# Should output: YOUR_VPS_IP
+
+dig www.partnersystems.online +short
+# Should output: YOUR_VPS_IP
+
+# Or use nslookup
+nslookup partnersystems.online
+# Should show your VPS IP
+```
+
+**If DNS is not pointing correctly:**
+- Update your domain DNS records
+- Wait 5-15 minutes for DNS propagation
+- Test again before proceeding
+
+### 10.2 Disable Cloudflare Proxy (If Using Cloudflare)
+
+**Important:** If your domain uses Cloudflare:
+1. Go to Cloudflare DNS settings
+2. Set partnersystems.online to "DNS Only" (gray cloud icon)
+3. Set www.partnersystems.online to "DNS Only" (gray cloud icon)
+4. Wait 2-3 minutes for changes to propagate
+
+**Test:**
+```bash
+# DNS should now point directly to your VPS IP, not Cloudflare
+dig partnersystems.online +short
+# Should be your VPS IP, not a Cloudflare IP (104.x.x.x or 172.x.x.x)
+```
+
+### 10.3 Obtain SSL Certificate
+
+```bash
+sudo certbot --nginx -d partnersystems.online -d www.partnersystems.online
+```
+
+**Follow the prompts:**
+1. Enter email address for urgent renewal and security notices
+2. Agree to terms of service (Y)
+3. Choose whether to receive EFF newsletter (Y/N)
+4. Choose option 2: Redirect all HTTP to HTTPS (recommended)
+
+**Expected Output:**
+```
+Successfully received certificate.
+Certificate is saved at: /etc/letsencrypt/live/partnersystems.online/fullchain.pem
+Key is saved at: /etc/letsencrypt/live/partnersystems.online/privkey.pem
+```
+
+**Test:**
+```bash
+# Verify certificate exists
+sudo certbot certificates
+# Should show partnersystems.online with expiry date
+
+# Check certificate files
+sudo ls -l /etc/letsencrypt/live/partnersystems.online/
+# Should show: cert.pem, chain.pem, fullchain.pem, privkey.pem
+```
+
+**If certbot fails:**
+```bash
+# Check Nginx error logs
+sudo tail -f /var/log/nginx/error.log
+
+# Ensure port 80 is accessible
+sudo netstat -tlnp | grep :80
+
+# Verify domain is accessible
+curl -I http://partnersystems.online
+```
+
+### 10.4 Test HTTPS Access
+
+```bash
+# Test HTTPS
+curl -I https://partnersystems.online
+# Should show: HTTP/2 200
+
+# Test HTTP redirect
+curl -I http://partnersystems.online
+# Should show: 301 redirect to https://
+```
+
+**Test in Browser:**
+1. Open https://partnersystems.online
+2. Verify green lock icon (secure connection)
+3. Click on lock icon → Certificate → Should be valid
+
+---
+
+## Step 11: Re-enable Cloudflare Proxy (Optional)
+
+**If you use Cloudflare and want proxy protection:**
+
 1. Go to Cloudflare DNS settings
 2. Enable proxy (orange cloud) for partnersystems.online
-3. Set SSL/TLS mode to "Full (strict)"
-4. The app will continue working through Cloudflare
+3. Enable proxy (orange cloud) for www.partnersystems.online
+4. In SSL/TLS settings, set to "Full (strict)"
 
-### Firewall Configuration (Recommended)
-
+**Test:**
 ```bash
-# If UFW is not active yet (recommended to enable)
-sudo ufw allow OpenSSH
-sudo ufw allow 'Nginx Full'
-sudo ufw enable
+# Test site still works through Cloudflare
+curl -I https://partnersystems.online
+# Should still show: HTTP/2 200
+
+# Open in browser - should still work with SSL
 ```
 
 ---
 
-## Updating Database Configuration
+## Step 12: Final Verification (Critical Checkpoint)
 
-When you need to change database settings (credentials, host, pool size):
+### 12.1 Application Health Check
 
 ```bash
-# Run the update script
-sudo bash /home/partnersystems_main/app/deployment/scripts/update-config.sh
+# Check PM2 status
+sudo -u partnersystems_main pm2 status
+# Should show: partnersystems_main | online | 0 restarts
+
+# View recent logs
+sudo -u partnersystems_main pm2 logs partnersystems_main --lines 50 --nostream
+# Should show successful database connections, no errors
 ```
 
-This script will:
-1. Create a backup of current config
-2. Let you edit the .env file
-3. Test the new database connection
-4. Restart the app if test passes
-5. Rollback automatically if test fails
-
-### Manual Update Process
+### 12.2 Database Connection Check
 
 ```bash
-# 1. Edit configuration
-sudo nano /home/partnersystems_main/app/.env
-
-# 2. Test connection
+# Re-run database test
 cd /home/partnersystems_main/app
 sudo -u partnersystems_main node deployment/scripts/test-db.js
-
-# 3. If test passes, restart
-sudo -u partnersystems_main pm2 restart partnersystems_main
-
-# 4. Check logs
-sudo -u partnersystems_main pm2 logs partnersystems_main
+# Should show: ✓ Database health check PASSED
 ```
+
+### 12.3 Web Access Check
+
+```bash
+# Test local port
+curl -I http://localhost:3008
+# Should show: HTTP/1.1 200 OK
+
+# Test domain HTTPS
+curl -I https://partnersystems.online
+# Should show: HTTP/2 200
+
+# Test www redirect
+curl -I https://www.partnersystems.online
+# Should work correctly
+```
+
+### 12.4 SSL Certificate Check
+
+```bash
+# Check certificate expiry
+sudo certbot certificates | grep partnersystems.online -A 5
+# Should show valid expiry date ~90 days in future
+```
+
+### 12.5 Verify Other Apps Not Affected
+
+```bash
+# Check all ports are still running
+sudo netstat -tlnp | grep -E ':(8000|3001|3002|3003|3004|3005|3006|3007|3008)'
+
+# Should see:
+# :8000 (FreePaper)
+# :3001, :3002 (Kerit)
+# :3003 (TrustLine)
+# :3004 (SmartCover)
+# :3005 (TopTeachers)
+# :3006 (PartnerSystems)
+# :3007 (SiahRokh)
+# :3008 (partnersystems_main) <- NEW
+```
+
+### 12.6 Browser Test (Final)
+
+**Open in browser:** https://partnersystems.online
+
+Verify:
+- [ ] Page loads successfully
+- [ ] SSL certificate is valid (green lock icon)
+- [ ] No console errors (F12 → Console tab)
+- [ ] Application functions correctly
 
 ---
 
-## Rollback Procedure
+## Post-Deployment: Maintenance Commands
 
-If database configuration changes break the app:
-
+### View Application Status
 ```bash
-# Run rollback script
-sudo bash /home/partnersystems_main/app/deployment/scripts/rollback.sh
+sudo -u partnersystems_main pm2 status
 ```
 
-This will:
-1. Show available backup files
-2. Let you select which backup to restore
-3. Test the connection
-4. Restart the app with restored config
-
-### Manual Rollback
-
+### View Live Logs
 ```bash
-# List backups
-ls -lah /home/partnersystems_main/app/.env.backup.*
-
-# Restore a backup
-sudo cp /home/partnersystems_main/app/.env.backup.YYYYMMDD_HHMMSS \
-        /home/partnersystems_main/app/.env
-
-# Restart
-sudo -u partnersystems_main pm2 restart partnersystems_main
-```
-
----
-
-## Maintenance Commands
-
-### Application Management
-
-```bash
-# View status
-sudo -u partnersystems_main pm2 status partnersystems_main
-
-# View logs (real-time)
 sudo -u partnersystems_main pm2 logs partnersystems_main
+```
 
-# View last 100 log lines
-sudo -u partnersystems_main pm2 logs partnersystems_main --lines 100
+### View Last 100 Log Lines
+```bash
+sudo -u partnersystems_main pm2 logs partnersystems_main --lines 100 --nostream
+```
 
-# Restart
+### Restart Application
+```bash
 sudo -u partnersystems_main pm2 restart partnersystems_main
+```
 
-# Stop
+### Stop Application
+```bash
 sudo -u partnersystems_main pm2 stop partnersystems_main
+```
 
-# Start
+### Start Application
+```bash
 sudo -u partnersystems_main pm2 start partnersystems_main
 ```
 
-### Log Files
-
+### Test Database Connection
 ```bash
-# Application logs
-tail -f /home/partnersystems_main/logs/out.log
-tail -f /home/partnersystems_main/logs/error.log
-
-# Nginx logs
-tail -f /var/log/nginx/partnersystems_main_access.log
-tail -f /var/log/nginx/partnersystems_main_error.log
-```
-
-### Database Health Check
-
-```bash
-# Run anytime to verify database connection
 cd /home/partnersystems_main/app
 sudo -u partnersystems_main node deployment/scripts/test-db.js
+```
+
+### Update Database Configuration
+```bash
+# Use the update script (recommended)
+sudo bash /home/partnersystems_main/app/deployment/scripts/update-config.sh
+
+# Or manually:
+# 1. Edit .env
+sudo nano /home/partnersystems_main/app/.env
+# 2. Test connection
+cd /home/partnersystems_main/app && sudo -u partnersystems_main node deployment/scripts/test-db.js
+# 3. Restart app
+sudo -u partnersystems_main pm2 restart partnersystems_main
+```
+
+### Rollback Configuration
+```bash
+# Use rollback script
+sudo bash /home/partnersystems_main/app/deployment/scripts/rollback.sh
+```
+
+### View Nginx Logs
+```bash
+# Access log
+sudo tail -f /var/log/nginx/partnersystems_main_access.log
+
+# Error log
+sudo tail -f /var/log/nginx/partnersystems_main_error.log
+```
+
+### Renew SSL Certificate (Manual)
+```bash
+# Test renewal
+sudo certbot renew --dry-run
+
+# Actual renewal (usually automatic)
+sudo certbot renew
 ```
 
 ---
 
 ## Troubleshooting
 
-### Issue: App Won't Start
-
+### App Won't Start
 ```bash
-# Check PM2 logs
-sudo -u partnersystems_main pm2 logs partnersystems_main --lines 100
+# Check PM2 logs for errors
+sudo -u partnersystems_main pm2 logs partnersystems_main --err
 
-# Check if port is available
-sudo netstat -tlnp | grep 3008
+# Check if .env file has all required variables
+sudo cat /home/partnersystems_main/app/.env | grep SINGLESTORE
 
-# Check environment file
-sudo -u partnersystems_main cat /home/partnersystems_main/app/.env
+# Verify port 3008 is available
+sudo netstat -tlnp | grep :3008
 ```
 
-### Issue: Database Connection Fails
-
+### Database Connection Fails
 ```bash
-# Run health check
+# Run database test
 cd /home/partnersystems_main/app
 sudo -u partnersystems_main node deployment/scripts/test-db.js
 
-# Check SingleStore credentials
-# Verify IP whitelist in SingleStore portal
-# Test from SingleStore SQL editor
+# Check VPS IP is whitelisted in SingleStore
+curl -4 ifconfig.me
+
+# Verify credentials
+sudo nano /home/partnersystems_main/app/.env
 ```
 
-### Issue: SSL Certificate Not Working
-
+### SSL Certificate Issues
 ```bash
 # Check certificate status
 sudo certbot certificates
 
-# Renew manually
+# Test renewal
 sudo certbot renew --dry-run
 
-# If using Cloudflare, ensure "DNS Only" mode during cert issuance
+# If using Cloudflare, temporarily disable proxy (gray cloud)
 ```
 
-### Issue: Nginx Error
-
+### Port Conflicts
 ```bash
-# Test configuration
-sudo nginx -t
-
-# Check Nginx logs
-tail -f /var/log/nginx/error.log
-
-# Restart Nginx
-sudo systemctl restart nginx
-```
-
-### Issue: Port Conflict
-
-```bash
-# Check what's using port 3008
-sudo netstat -tlnp | grep 3008
+# Find what's using port 3008
 sudo lsof -i :3008
 
-# If conflict, change port in:
+# Change port in these files:
 # 1. /home/partnersystems_main/app/.env (PORT=3008)
 # 2. /home/partnersystems_main/app/ecosystem.config.cjs
-# 3. /etc/nginx/sites-available/partnersystems_main (proxy_pass)
+# 3. /etc/nginx/sites-available/partnersystems_main
 ```
 
 ---
 
-## Security Notes
+## Security Checklist
 
-1. **User Isolation**: App runs as dedicated `partnersystems_main` user (not root)
-2. **File Permissions**: 
-   - Home directory: 700 (owner only)
-   - .env file: 600 (owner read/write only)
-   - SSL cert: 644 (readable)
-3. **Database**: SSL/TLS encrypted connection to SingleStore
-4. **Web Traffic**: HTTPS only (HTTP redirects to HTTPS)
-5. **Session Secret**: Unique, randomly generated
-
----
-
-## Architecture Summary
-
-```
-Internet
-    ↓
-Cloudflare DNS (optional proxy)
-    ↓
-VPS (Nginx on port 443)
-    ↓
-Nginx reverse proxy (SSL termination)
-    ↓
-Node.js app (127.0.0.1:3008)
-    ↓ (SSL encrypted)
-External SingleStore Database
-```
-
-### File Structure
-
-```
-/home/partnersystems_main/
-├── app/                              # Application code
-│   ├── server/                       # Backend code
-│   ├── client/                       # Frontend code
-│   ├── shared/                       # Shared schemas
-│   ├── certs/                        # SSL certificates
-│   │   └── singlestore_bundle.pem
-│   ├── deployment/                   # Deployment scripts
-│   │   ├── scripts/
-│   │   ├── configs/
-│   │   └── docs/
-│   ├── .env                          # Configuration (secret)
-│   ├── ecosystem.config.cjs          # PM2 config
-│   └── package.json
-└── logs/                             # Application logs
-    ├── out.log
-    ├── error.log
-    └── combined.log
-```
-
-### Port Allocation
-
-- **3008**: partnersystems_main (THIS APP)
-- 8000: FreePaper
-- 3001-3002: Kerit
-- 3003: TrustLine
-- 3004: SmartCover
-- 3005: TopTeachers
-- 3006: PartnerSystems
-- 3007: SiahRokh
+- [x] Application runs as non-root user (partnersystems_main)
+- [x] .env file permissions set to 600 (owner-only)
+- [x] Home directory permissions set to 700 (owner-only)
+- [x] Database connection uses SSL/TLS
+- [x] All HTTP traffic redirects to HTTPS
+- [x] Session secret is randomly generated
+- [x] SSL certificate is valid and trusted
 
 ---
 
-## Support & Additional Help
+## Deployment Complete!
 
-If you encounter issues:
+Your application is now running at **https://partnersystems.online**
 
-1. Check logs first (PM2, Nginx, application)
-2. Run database health check
-3. Verify all environment variables are set
-4. Check SingleStore portal for connection logs
-5. Ensure DNS is propagated (use `dig partnersystems.online`)
-
----
-
-## Backup & Disaster Recovery
-
-### Configuration Backups
-
-Automatic backups are created:
-- `/home/partnersystems_main/app/.env.backup.*` - Before each config change
-- Keep at least 3 most recent backups
-
-### Application Backup
-
-```bash
-# Create full backup
-sudo tar -czf partnersystems_main_backup_$(date +%Y%m%d).tar.gz \
-  /home/partnersystems_main/
-
-# Restore from backup (if needed)
-sudo tar -xzf partnersystems_main_backup_YYYYMMDD.tar.gz -C /
-sudo -u partnersystems_main pm2 restart partnersystems_main
+**Architecture:**
+```
+Internet → Cloudflare (optional) → Nginx (port 443) → Node.js (port 3008) → SingleStore DB
 ```
 
-### Database Backup
-
-SingleStore handles backups. Check your SingleStore portal for:
-- Automatic backups schedule
-- Point-in-time recovery options
-- Backup retention policy
-
----
-
-**Deployment Complete!** Your app is now running at https://partnersystems.online with complete isolation from all other apps.
+**Key Information:**
+- User: partnersystems_main
+- Port: 3008
+- App Directory: /home/partnersystems_main/app
+- Logs: /home/partnersystems_main/logs
+- Domain: partnersystems.online

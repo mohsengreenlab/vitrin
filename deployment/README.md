@@ -1,6 +1,6 @@
 # PartnerSystems Main - VPS Deployment Package
 
-Complete deployment package for Ubuntu VPS with full isolation from existing applications.
+Manual step-by-step deployment package for Ubuntu VPS with complete isolation from existing applications.
 
 ## What's Included
 
@@ -9,30 +9,41 @@ Complete deployment package for Ubuntu VPS with full isolation from existing app
 - `.env.template` - Environment variables template for SingleStore
 - `nginx-partnersystems.conf` - Nginx reverse proxy configuration
 
-### Scripts (`scripts/`)
-- `deploy.sh` - Main deployment script (run once)
+### Utility Scripts (`scripts/`)
 - `test-db.js` - Database health check and connection validator
 - `update-config.sh` - Safe configuration update with automatic testing
 - `rollback.sh` - Configuration rollback tool
 
 ### Documentation (`docs/`)
-- `DEPLOYMENT_GUIDE.md` - Complete step-by-step deployment instructions
-- `QUICK_START.md` - Fast 5-minute deployment guide
+- `DEPLOYMENT_GUIDE.md` - Complete manual step-by-step deployment instructions with tests
 
-## Quick Links
+## Deployment Approach
 
-- **First Time Setup**: See `docs/DEPLOYMENT_GUIDE.md`
-- **Fast Deployment**: See `docs/QUICK_START.md`
-- **Update Database Config**: Run `scripts/update-config.sh`
-- **Rollback Changes**: Run `scripts/rollback.sh`
-- **Test Database**: Run `scripts/test-db.js`
+This package uses a **manual step-by-step approach** instead of automated scripts. This gives you:
+
+✓ Full control over each deployment step
+✓ Verification/testing after each checkpoint
+✓ Better understanding of the deployment process
+✓ Easier troubleshooting if issues occur
+✓ No "black box" automated scripts
+
+## Getting Started
+
+**Follow the step-by-step guide:** `docs/DEPLOYMENT_GUIDE.md`
+
+The guide includes:
+- Prerequisites checklist
+- 12 detailed deployment steps
+- Test commands after each step
+- Troubleshooting section
+- Maintenance commands
 
 ## Key Features
 
 ✓ **Complete Isolation**: Dedicated user, port, domain, logs  
 ✓ **Zero Conflicts**: No impact on existing apps (ports 8000, 3001-3007)  
 ✓ **External SingleStore**: Configurable database connection with SSL  
-✓ **Safe Updates**: Automatic backup, test, and rollback  
+✓ **Safe Updates**: Automatic backup, test, and rollback utilities  
 ✓ **Health Checks**: Database validation before startup  
 ✓ **SSL/HTTPS**: Let's Encrypt certificates, Cloudflare compatible  
 
@@ -56,10 +67,10 @@ Reserved ports (will not touch):
 ## System Requirements
 
 - Ubuntu 20.04 LTS or newer
-- Node.js 18.x or 20.x
-- Nginx
-- PM2
-- Certbot (for SSL)
+- Node.js 20.x (installed in deployment steps)
+- Nginx (installed in deployment steps)
+- PM2 (installed in deployment steps)
+- Certbot for SSL (installed in deployment steps)
 - 1GB+ free RAM
 
 ## Database Requirements
@@ -69,23 +80,73 @@ External SingleStore database with:
 - SSL certificate (included: `certs/singlestore_bundle.pem`)
 - VPS IP whitelisted in SingleStore
 
-## Deployment Process
+## Manual Deployment Process Summary
 
-1. **Upload**: Copy package to VPS
-2. **Deploy**: Run `deployment/scripts/deploy.sh`
-3. **Configure**: Edit `.env` with SingleStore credentials
-4. **Test**: Run database health check
-5. **Start**: Restart PM2 service
-6. **Verify**: Check logs and access website
+1. **Prepare VPS**: Install Node.js, PM2, Nginx, Certbot
+2. **Create User**: Set up dedicated system user and directories
+3. **Upload App**: Transfer and extract application files
+4. **Configure**: Set up environment variables and database credentials
+5. **Set Permissions**: Secure files and directories
+6. **Install & Build**: Install dependencies and build application
+7. **Test Database**: Verify database connection (critical checkpoint)
+8. **Configure PM2**: Set up process manager
+9. **Configure Nginx**: Set up reverse proxy
+10. **Setup SSL**: Obtain Let's Encrypt certificate
+11. **Enable Cloudflare**: (Optional) Enable proxy protection
+12. **Final Verification**: Complete health checks
 
-## Support
+Each step includes test commands to verify success before proceeding.
 
-For detailed instructions, troubleshooting, and maintenance:
+## Utility Commands
+
+After deployment, use these utilities:
+
+### Test Database Connection
+```bash
+cd /home/partnersystems_main/app
+sudo -u partnersystems_main node deployment/scripts/test-db.js
+```
+
+### Update Configuration Safely
+```bash
+sudo bash /home/partnersystems_main/app/deployment/scripts/update-config.sh
+```
+
+### Rollback Configuration
+```bash
+sudo bash /home/partnersystems_main/app/deployment/scripts/rollback.sh
+```
+
+### Check Application Status
+```bash
+sudo -u partnersystems_main pm2 status
+sudo -u partnersystems_main pm2 logs partnersystems_main
+```
+
+## Quick Troubleshooting
+
+**App won't start?**
+```bash
+sudo -u partnersystems_main pm2 logs partnersystems_main --err --lines 50
+```
+
+**Database connection fails?**
+```bash
+cd /home/partnersystems_main/app
+sudo -u partnersystems_main node deployment/scripts/test-db.js
+```
+
+**SSL issues?**
+```bash
+sudo certbot certificates
+sudo certbot renew --dry-run
+```
+
+## Documentation
+
+For complete deployment instructions with test commands after each step:
 → See `docs/DEPLOYMENT_GUIDE.md`
-
-For quick deployment:
-→ See `docs/QUICK_START.md`
 
 ---
 
-**Ready to deploy?** Start with `docs/DEPLOYMENT_GUIDE.md`
+**Ready to deploy?** Start with the step-by-step guide in `docs/DEPLOYMENT_GUIDE.md`
