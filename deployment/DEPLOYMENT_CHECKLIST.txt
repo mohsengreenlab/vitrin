@@ -41,16 +41,14 @@ STEP 2: CREATE USER AND DIRECTORIES
     [ ] /home/partnersystems/app/certs
     [ ] Test: ls -la /home/partnersystems/
 
-STEP 3: UPLOAD AND INSTALL APPLICATION
----------------------------------------
-[ ] Archive created on local machine
-    [ ] Test: ls -lh partnersystems.tar.gz
-[ ] Uploaded to VPS /tmp/
-    [ ] Test: ls -lh /tmp/partnersystems.tar.gz
-[ ] Extracted to /home/partnersystems/app/
+STEP 3: CLONE APPLICATION FROM GITHUB
+--------------------------------------
+[ ] Git installed
+    [ ] Test: git --version (should show 2.x.x or higher)
+[ ] Repository cloned to /home/partnersystems/app
     [ ] Test: ls -la /home/partnersystems/app/
     [ ] Test: find /home/partnersystems/app -type f | wc -l (many files)
-[ ] SSL certificate in place (if available)
+[ ] SSL certificate verified (if in repository)
     [ ] Test: ls -l /home/partnersystems/app/certs/singlestore_bundle.pem
 
 STEP 4: CONFIGURE APPLICATION

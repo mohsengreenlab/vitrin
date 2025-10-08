@@ -153,71 +153,51 @@ ls -la /home/partnersystems/
 
 ---
 
-## Step 3: Upload and Install Application
+## Step 3: Clone Application from GitHub
 
-### 3.1 Create Application Archive (On Your Local Machine)
+### 3.1 Install Git (if not already installed)
 
 ```bash
-# From your project root directory
-tar -czf partnersystems.tar.gz \
-  --exclude='node_modules' \
-  --exclude='.git' \
-  --exclude='*.log' \
-  .
+sudo apt-get install -y git
 ```
 
 **Test:**
 ```bash
-# Verify archive was created
-ls -lh partnersystems.tar.gz
-# Should show file size (several MB)
+git --version
+# Should output: git version 2.x.x or higher
 ```
 
-### 3.2 Upload to VPS
+### 3.2 Clone Repository
 
 ```bash
-# Replace YOUR_VPS_IP with your actual IP
-scp partnersystems.tar.gz root@YOUR_VPS_IP:/tmp/
+# Clone the repository directly into the app directory
+sudo git clone https://github.com/YOUR_USERNAME/YOUR_REPO.git /home/partnersystems/app
 ```
+
+**Note:** Replace `YOUR_USERNAME/YOUR_REPO` with your actual GitHub repository path.
 
 **Test:**
 ```bash
-# On VPS, verify upload
-ls -lh /tmp/partnersystems.tar.gz
-# Should show the file
-```
-
-### 3.3 Extract Application Files
-
-```bash
-# On VPS
-cd /tmp
-sudo tar -xzf partnersystems.tar.gz -C /home/partnersystems/app/
-```
-
-**Test:**
-```bash
-# Verify files were extracted
+# Verify files were cloned
 ls -la /home/partnersystems/app/
-# Should show: server/, client/, shared/, package.json, etc.
+# Should show: server/, client/, shared/, package.json, .git/, etc.
 
-# Count files to ensure extraction worked
+# Count files to ensure clone worked
 find /home/partnersystems/app -type f | wc -l
 # Should show many files (hundreds)
 ```
 
-### 3.4 Copy SSL Certificate
+### 3.3 Verify SSL Certificate
 
 ```bash
-# If you have the SingleStore SSL certificate
-sudo cp /home/partnersystems/app/certs/singlestore_bundle.pem /home/partnersystems/app/certs/ 2>/dev/null || echo "SSL cert will be set up later"
+# Check if certificate exists in the repository
+ls -l /home/partnersystems/app/certs/singlestore_bundle.pem
 ```
 
 **Test:**
 ```bash
-# Check if certificate exists
-ls -l /home/partnersystems/app/certs/singlestore_bundle.pem
-# Should show the file, or you can add it later
+# Should show the file if it exists in the repository
+# If not present, you'll need to add it manually in the next step
 ```
 
 ---

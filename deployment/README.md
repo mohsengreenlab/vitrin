@@ -84,7 +84,7 @@ External SingleStore database with:
 
 1. **Prepare VPS**: Install Node.js, PM2, Nginx, Certbot
 2. **Create User**: Set up dedicated system user and directories
-3. **Upload App**: Transfer and extract application files
+3. **Clone App**: Clone application from GitHub repository
 4. **Configure**: Set up environment variables and database credentials
 5. **Set Permissions**: Secure files and directories
 6. **Install & Build**: Install dependencies and build application
