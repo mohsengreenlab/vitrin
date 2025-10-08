@@ -224,7 +224,7 @@ PORT=3006
 SINGLESTORE_HOST=svc-xxxxx-xxxx.svc.singlestore.com
 SINGLESTORE_PORT=3333
 SINGLESTORE_USER=your_username
-SINGLESTORE_PASSWORD=your_password
+SINGLESTORE_PASSWORD="your_password"
 SINGLESTORE_DATABASE=your_database
 
 # Session Secret - Generate a random string
@@ -240,6 +240,18 @@ SSL_REJECT_UNAUTHORIZED=false
 ```
 
 Save and exit (Ctrl+X, Y, Enter)
+
+**⚠️ IMPORTANT - Passwords with Special Characters:**
+
+If your password contains special characters (like `[ ] $ ! # @ % & * ( ) { } | \ ` " '`), you **MUST** wrap it in double quotes:
+
+```env
+# CORRECT - Password with special characters in quotes
+SINGLESTORE_PASSWORD="[77pA8-znr"
+
+# WRONG - No quotes will cause character misinterpretation
+SINGLESTORE_PASSWORD=[77pA8-znr
+```
 
 ### 4.2 Generate Secure Session Secret
 
@@ -484,8 +496,17 @@ sudo -u partnersystems pm2 status
 
 # Check logs for successful start
 sudo -u partnersystems pm2 logs partnersystems --lines 30
-# Should show: "Successfully connected to SingleStore database"
-# Should show: "serving on port 5000" (internal Express port)
+# Should show: "✓ Successfully connected to SingleStore database"
+# Should show: "serving on port 3006"
+```
+
+**If you see "environment variable is not set" errors:**
+```bash
+# Restart with environment update flag
+sudo -u partnersystems pm2 restart partnersystems --update-env
+
+# Check logs again
+sudo -u partnersystems pm2 logs partnersystems --lines 30
 ```
 
 ### 8.3 Save PM2 Configuration
