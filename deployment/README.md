@@ -49,7 +49,7 @@ The guide includes:
 
 ## Port Assignment
 
-**NEW APP: 3008** (partnersystems_main)
+**NEW APP: 3006** (partnersystems)
 
 Reserved ports (will not touch):
 - 8000: FreePaper
@@ -103,37 +103,37 @@ After deployment, use these utilities:
 
 ### Test Database Connection
 ```bash
-cd /home/partnersystems_main/app
-sudo -u partnersystems_main node deployment/scripts/test-db.js
+cd /home/partnersystems/app
+sudo -u partnersystems node deployment/scripts/test-db.js
 ```
 
 ### Update Configuration Safely
 ```bash
-sudo bash /home/partnersystems_main/app/deployment/scripts/update-config.sh
+sudo bash /home/partnersystems/app/deployment/scripts/update-config.sh
 ```
 
 ### Rollback Configuration
 ```bash
-sudo bash /home/partnersystems_main/app/deployment/scripts/rollback.sh
+sudo bash /home/partnersystems/app/deployment/scripts/rollback.sh
 ```
 
 ### Check Application Status
 ```bash
-sudo -u partnersystems_main pm2 status
-sudo -u partnersystems_main pm2 logs partnersystems_main
+sudo -u partnersystems pm2 status
+sudo -u partnersystems pm2 logs partnersystems
 ```
 
 ## Quick Troubleshooting
 
 **App won't start?**
 ```bash
-sudo -u partnersystems_main pm2 logs partnersystems_main --err --lines 50
+sudo -u partnersystems pm2 logs partnersystems --err --lines 50
 ```
 
 **Database connection fails?**
 ```bash
-cd /home/partnersystems_main/app
-sudo -u partnersystems_main node deployment/scripts/test-db.js
+cd /home/partnersystems/app
+sudo -u partnersystems node deployment/scripts/test-db.js
 ```
 
 **SSL issues?**

@@ -2,12 +2,12 @@
 
 # Rollback Script
 # Quickly restore previous database configuration if something goes wrong
-# This script ONLY affects partnersystems_main, no other apps
+# This script ONLY affects partnersystems, no other apps
 
 set -e
 
-APP_NAME="partnersystems_main"
-APP_USER="partnersystems_main"
+APP_NAME="partnersystems"
+APP_USER="partnersystems"
 APP_DIR="/home/${APP_USER}/app"
 ENV_FILE="${APP_DIR}/.env"
 

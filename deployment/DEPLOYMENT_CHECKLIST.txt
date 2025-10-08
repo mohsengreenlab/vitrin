@@ -28,34 +28,34 @@ STEP 1: PREPARE VPS ENVIRONMENT
     [ ] Test: sudo nginx -t (should show syntax ok)
 [ ] Certbot installed
     [ ] Test: certbot --version
-[ ] Port 3008 available
-    [ ] Test: sudo netstat -tlnp | grep :3008 (should return nothing)
+[ ] Port 3006 available
+    [ ] Test: sudo netstat -tlnp | grep :3006 (should return nothing)
 
 STEP 2: CREATE USER AND DIRECTORIES
 ------------------------------------
-[ ] User created: sudo useradd -m -s /bin/bash partnersystems_main
-    [ ] Test: id partnersystems_main (should show uid and gid)
+[ ] User created: sudo useradd -m -s /bin/bash partnersystems
+    [ ] Test: id partnersystems (should show uid and gid)
 [ ] Directories created:
-    [ ] /home/partnersystems_main/app
-    [ ] /home/partnersystems_main/logs
-    [ ] /home/partnersystems_main/app/certs
-    [ ] Test: ls -la /home/partnersystems_main/
+    [ ] /home/partnersystems/app
+    [ ] /home/partnersystems/logs
+    [ ] /home/partnersystems/app/certs
+    [ ] Test: ls -la /home/partnersystems/
 
 STEP 3: UPLOAD AND INSTALL APPLICATION
 ---------------------------------------
 [ ] Archive created on local machine
-    [ ] Test: ls -lh partnersystems_main.tar.gz
+    [ ] Test: ls -lh partnersystems.tar.gz
 [ ] Uploaded to VPS /tmp/
-    [ ] Test: ls -lh /tmp/partnersystems_main.tar.gz
-[ ] Extracted to /home/partnersystems_main/app/
-    [ ] Test: ls -la /home/partnersystems_main/app/
-    [ ] Test: find /home/partnersystems_main/app -type f | wc -l (many files)
+    [ ] Test: ls -lh /tmp/partnersystems.tar.gz
+[ ] Extracted to /home/partnersystems/app/
+    [ ] Test: ls -la /home/partnersystems/app/
+    [ ] Test: find /home/partnersystems/app -type f | wc -l (many files)
 [ ] SSL certificate in place (if available)
-    [ ] Test: ls -l /home/partnersystems_main/app/certs/singlestore_bundle.pem
+    [ ] Test: ls -l /home/partnersystems/app/certs/singlestore_bundle.pem
 
 STEP 4: CONFIGURE APPLICATION
 ------------------------------
-[ ] .env file created at /home/partnersystems_main/app/.env
+[ ] .env file created at /home/partnersystems/app/.env
 [ ] SINGLESTORE_HOST set (not placeholder)
 [ ] SINGLESTORE_PORT set (3333 or 3306)
 [ ] SINGLESTORE_USER set (not placeholder)
@@ -63,36 +63,36 @@ STEP 4: CONFIGURE APPLICATION
 [ ] SINGLESTORE_DATABASE set (not placeholder)
 [ ] SESSION_SECRET generated and set
     [ ] Used: openssl rand -base64 32
-[ ] PORT=3008 confirmed
+[ ] PORT=3006 confirmed
 [ ] NODE_ENV=production confirmed
-[ ] Test: sudo cat /home/partnersystems_main/app/.env | grep SINGLESTORE_HOST
+[ ] Test: sudo cat /home/partnersystems/app/.env | grep SINGLESTORE_HOST
 
 STEP 5: SET PERMISSIONS
 -----------------------
-[ ] Ownership set to partnersystems_main:partnersystems_main
-    [ ] Test: ls -ld /home/partnersystems_main/app
+[ ] Ownership set to partnersystems:partnersystems
+    [ ] Test: ls -ld /home/partnersystems/app
 [ ] Home directory secured (700)
-    [ ] Test: ls -ld /home/partnersystems_main (should show drwx------)
+    [ ] Test: ls -ld /home/partnersystems (should show drwx------)
 [ ] .env file secured (600)
-    [ ] Test: ls -l /home/partnersystems_main/app/.env (should show -rw-------)
+    [ ] Test: ls -l /home/partnersystems/app/.env (should show -rw-------)
 [ ] App directory readable (755)
 [ ] Logs directory writable (755)
 
 STEP 6: INSTALL AND BUILD
 -------------------------
-[ ] Dependencies installed: sudo -u partnersystems_main npm install
-    [ ] Test: ls -d /home/partnersystems_main/app/node_modules
-    [ ] Test: ls /home/partnersystems_main/app/node_modules | wc -l (many packages)
-[ ] Application built: sudo -u partnersystems_main npm run build
-    [ ] Test: ls -la /home/partnersystems_main/app/dist
-    [ ] Test: ls -l /home/partnersystems_main/app/dist/public/index.html
+[ ] Dependencies installed: sudo -u partnersystems npm install
+    [ ] Test: ls -d /home/partnersystems/app/node_modules
+    [ ] Test: ls /home/partnersystems/app/node_modules | wc -l (many packages)
+[ ] Application built: sudo -u partnersystems npm run build
+    [ ] Test: ls -la /home/partnersystems/app/dist
+    [ ] Test: ls -l /home/partnersystems/app/dist/public/index.html
 [ ] (Optional) Dev dependencies pruned: npm prune --production
 
 STEP 7: TEST DATABASE (CRITICAL CHECKPOINT)
 --------------------------------------------
 [ ] Database test script executed
-    [ ] cd /home/partnersystems_main/app
-    [ ] sudo -u partnersystems_main node deployment/scripts/test-db.js
+    [ ] cd /home/partnersystems/app
+    [ ] sudo -u partnersystems node deployment/scripts/test-db.js
 [ ] Test results:
     [ ] ✓ All required environment variables present
     [ ] ✓ Connection established
@@ -105,32 +105,32 @@ STEP 7: TEST DATABASE (CRITICAL CHECKPOINT)
 STEP 8: CONFIGURE PM2
 ---------------------
 [ ] PM2 config copied to app directory
-    [ ] Test: cat /home/partnersystems_main/app/ecosystem.config.cjs
+    [ ] Test: cat /home/partnersystems/app/ecosystem.config.cjs
 [ ] Application started with PM2
-    [ ] sudo -u partnersystems_main pm2 start ecosystem.config.cjs
+    [ ] sudo -u partnersystems pm2 start ecosystem.config.cjs
 [ ] PM2 status check:
-    [ ] Test: sudo -u partnersystems_main pm2 status
-    [ ] Status shows: partnersystems_main | online
+    [ ] Test: sudo -u partnersystems pm2 status
+    [ ] Status shows: partnersystems | online
 [ ] PM2 logs show success:
-    [ ] Test: sudo -u partnersystems_main pm2 logs partnersystems_main --lines 30
+    [ ] Test: sudo -u partnersystems pm2 logs partnersystems --lines 30
     [ ] Logs show: "Successfully connected to SingleStore database"
     [ ] Logs show: "serving on port 5000" (internal)
 [ ] PM2 configuration saved
-    [ ] sudo -u partnersystems_main pm2 save
+    [ ] sudo -u partnersystems pm2 save
 [ ] PM2 startup configured
-    [ ] sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u partnersystems_main --hp /home/partnersystems_main
+    [ ] sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u partnersystems --hp /home/partnersystems
 [ ] Local app test:
-    [ ] Test: curl -I http://localhost:3008
+    [ ] Test: curl -I http://localhost:3006
     [ ] Should return: HTTP/1.1 200 OK
 
 STEP 9: CONFIGURE NGINX
 -----------------------
 [ ] Nginx config copied
-    [ ] sudo cp .../nginx-partnersystems.conf /etc/nginx/sites-available/partnersystems_main
-    [ ] Test: cat /etc/nginx/sites-available/partnersystems_main | grep server_name
+    [ ] sudo cp .../nginx-partnersystems.conf /etc/nginx/sites-available/partnersystems
+    [ ] Test: cat /etc/nginx/sites-available/partnersystems | grep server_name
 [ ] Site enabled (symlink created)
-    [ ] sudo ln -sf /etc/nginx/sites-available/partnersystems_main /etc/nginx/sites-enabled/
-    [ ] Test: ls -l /etc/nginx/sites-enabled/partnersystems_main
+    [ ] sudo ln -sf /etc/nginx/sites-available/partnersystems /etc/nginx/sites-enabled/
+    [ ] Test: ls -l /etc/nginx/sites-enabled/partnersystems
 [ ] Nginx configuration test:
     [ ] Test: sudo nginx -t
     [ ] Output: "syntax is ok" and "test is successful"
@@ -177,24 +177,24 @@ STEP 11: RE-ENABLE CLOUDFLARE (OPTIONAL)
 STEP 12: FINAL VERIFICATION
 ----------------------------
 [ ] PM2 status healthy:
-    [ ] Test: sudo -u partnersystems_main pm2 status
-    [ ] Shows: partnersystems_main | online | 0 restarts
+    [ ] Test: sudo -u partnersystems pm2 status
+    [ ] Shows: partnersystems | online | 0 restarts
 [ ] PM2 logs clean:
-    [ ] Test: sudo -u partnersystems_main pm2 logs partnersystems_main --lines 50 --nostream
+    [ ] Test: sudo -u partnersystems pm2 logs partnersystems --lines 50 --nostream
     [ ] No errors visible
 [ ] Database connection verified:
-    [ ] Test: cd /home/partnersystems_main/app
-    [ ] Test: sudo -u partnersystems_main node deployment/scripts/test-db.js
+    [ ] Test: cd /home/partnersystems/app
+    [ ] Test: sudo -u partnersystems node deployment/scripts/test-db.js
     [ ] Shows: ✓ Database health check PASSED
 [ ] Web access verified:
-    [ ] Test: curl -I http://localhost:3008 (200 OK)
+    [ ] Test: curl -I http://localhost:3006 (200 OK)
     [ ] Test: curl -I https://partnersystems.online (HTTP/2 200)
     [ ] Test: curl -I https://www.partnersystems.online (works)
 [ ] SSL certificate valid:
     [ ] Test: sudo certbot certificates | grep partnersystems.online -A 5
     [ ] Shows expiry ~90 days in future
 [ ] Other apps not affected:
-    [ ] Test: sudo netstat -tlnp | grep -E ':(8000|3001|3002|3003|3004|3005|3006|3007|3008)'
+    [ ] Test: sudo netstat -tlnp | grep -E ':(8000|3001|3002|3003|3004|3005|3006|3007|3006)'
     [ ] All expected ports visible
 [ ] Browser final test:
     [ ] Open: https://partnersystems.online
@@ -210,7 +210,7 @@ POST-DEPLOYMENT VERIFICATION
     [ ] Update config script: accessible
     [ ] Rollback script: accessible
 [ ] Document backup locations:
-    [ ] .env backups at: /home/partnersystems_main/app/.env.backup.*
+    [ ] .env backups at: /home/partnersystems/app/.env.backup.*
 [ ] Maintenance commands documented and saved
 [ ] All other apps verified still running:
     [ ] FreePaper (8000)
@@ -223,7 +223,7 @@ POST-DEPLOYMENT VERIFICATION
 
 SECURITY VERIFICATION
 ---------------------
-[ ] App runs as partnersystems_main user (not root)
+[ ] App runs as partnersystems user (not root)
 [ ] .env file permissions: 600
 [ ] Home directory permissions: 700
 [ ] Database uses SSL/TLS connection

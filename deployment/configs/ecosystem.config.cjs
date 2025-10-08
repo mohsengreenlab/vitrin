@@ -1,8 +1,8 @@
 module.exports = {
   apps: [{
-    name: 'partnersystems_main',
+    name: 'partnersystems',
     script: 'server/index.js',
-    cwd: '/home/partnersystems_main/app',
+    cwd: '/home/partnersystems/app',
     instances: 1,
     exec_mode: 'cluster',
     autorestart: true,
@@ -10,11 +10,11 @@ module.exports = {
     max_memory_restart: '512M',
     env: {
       NODE_ENV: 'production',
-      PORT: 3008
+      PORT: 3006
     },
-    error_file: '/home/partnersystems_main/logs/error.log',
-    out_file: '/home/partnersystems_main/logs/out.log',
-    log_file: '/home/partnersystems_main/logs/combined.log',
+    error_file: '/home/partnersystems/logs/error.log',
+    out_file: '/home/partnersystems/logs/out.log',
+    log_file: '/home/partnersystems/logs/combined.log',
     time: true,
     merge_logs: true,
     log_date_format: 'YYYY-MM-DD HH:mm:ss Z'

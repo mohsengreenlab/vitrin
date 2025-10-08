@@ -1,6 +1,6 @@
 # PartnerSystems Main - Manual Step-by-Step Deployment Guide
 
-This guide provides manual, step-by-step instructions to deploy `partnersystems_main` to your Ubuntu VPS with complete isolation from existing applications. Each step includes verification/test commands.
+This guide provides manual, step-by-step instructions to deploy `partnersystems` to your Ubuntu VPS with complete isolation from existing applications. Each step includes verification/test commands.
 
 ---
 
@@ -12,7 +12,7 @@ Before starting, ensure you have:
 - ✓ Root or sudo access
 - ✓ Domain `partnersystems.online` pointing to VPS IP
 - ✓ SingleStore database credentials ready
-- ✓ Port 3008 available
+- ✓ Port 3006 available
 
 ---
 
@@ -104,16 +104,16 @@ certbot --version
 # Should output: certbot 1.x.x or higher
 ```
 
-### 1.6 Verify Port 3008 is Available
+### 1.6 Verify Port 3006 is Available
 
 ```bash
-sudo netstat -tlnp | grep :3008
+sudo netstat -tlnp | grep :3006
 ```
 
 **Test:**
 ```bash
 # Should return nothing (port is free)
-# If something is using port 3008, you'll need to stop it or choose a different port
+# If something is using port 3006, you'll need to stop it or choose a different port
 ```
 
 ---
@@ -123,31 +123,31 @@ sudo netstat -tlnp | grep :3008
 ### 2.1 Create System User
 
 ```bash
-sudo useradd -m -s /bin/bash partnersystems_main
+sudo useradd -m -s /bin/bash partnersystems
 ```
 
 **Test:**
 ```bash
 # Verify user was created
-id partnersystems_main
+id partnersystems
 # Should output: uid=... gid=... groups=...
 
 # Verify home directory exists
-ls -ld /home/partnersystems_main
-# Should show directory with partnersystems_main owner
+ls -ld /home/partnersystems
+# Should show directory with partnersystems owner
 ```
 
 ### 2.2 Create Application Directories
 
 ```bash
-sudo mkdir -p /home/partnersystems_main/app
-sudo mkdir -p /home/partnersystems_main/logs
-sudo mkdir -p /home/partnersystems_main/app/certs
+sudo mkdir -p /home/partnersystems/app
+sudo mkdir -p /home/partnersystems/logs
+sudo mkdir -p /home/partnersystems/app/certs
 ```
 
 **Test:**
 ```bash
-ls -la /home/partnersystems_main/
+ls -la /home/partnersystems/
 # Should show: app/ and logs/ directories
 ```
 
@@ -159,7 +159,7 @@ ls -la /home/partnersystems_main/
 
 ```bash
 # From your project root directory
-tar -czf partnersystems_main.tar.gz \
+tar -czf partnersystems.tar.gz \
   --exclude='node_modules' \
   --exclude='.git' \
   --exclude='*.log' \
@@ -169,7 +169,7 @@ tar -czf partnersystems_main.tar.gz \
 **Test:**
 ```bash
 # Verify archive was created
-ls -lh partnersystems_main.tar.gz
+ls -lh partnersystems.tar.gz
 # Should show file size (several MB)
 ```
 
@@ -177,13 +177,13 @@ ls -lh partnersystems_main.tar.gz
 
 ```bash
 # Replace YOUR_VPS_IP with your actual IP
-scp partnersystems_main.tar.gz root@YOUR_VPS_IP:/tmp/
+scp partnersystems.tar.gz root@YOUR_VPS_IP:/tmp/
 ```
 
 **Test:**
 ```bash
 # On VPS, verify upload
-ls -lh /tmp/partnersystems_main.tar.gz
+ls -lh /tmp/partnersystems.tar.gz
 # Should show the file
 ```
 
@@ -192,17 +192,17 @@ ls -lh /tmp/partnersystems_main.tar.gz
 ```bash
 # On VPS
 cd /tmp
-sudo tar -xzf partnersystems_main.tar.gz -C /home/partnersystems_main/app/
+sudo tar -xzf partnersystems.tar.gz -C /home/partnersystems/app/
 ```
 
 **Test:**
 ```bash
 # Verify files were extracted
-ls -la /home/partnersystems_main/app/
+ls -la /home/partnersystems/app/
 # Should show: server/, client/, shared/, package.json, etc.
 
 # Count files to ensure extraction worked
-find /home/partnersystems_main/app -type f | wc -l
+find /home/partnersystems/app -type f | wc -l
 # Should show many files (hundreds)
 ```
 
@@ -210,13 +210,13 @@ find /home/partnersystems_main/app -type f | wc -l
 
 ```bash
 # If you have the SingleStore SSL certificate
-sudo cp /home/partnersystems_main/app/certs/singlestore_bundle.pem /home/partnersystems_main/app/certs/ 2>/dev/null || echo "SSL cert will be set up later"
+sudo cp /home/partnersystems/app/certs/singlestore_bundle.pem /home/partnersystems/app/certs/ 2>/dev/null || echo "SSL cert will be set up later"
 ```
 
 **Test:**
 ```bash
 # Check if certificate exists
-ls -l /home/partnersystems_main/app/certs/singlestore_bundle.pem
+ls -l /home/partnersystems/app/certs/singlestore_bundle.pem
 # Should show the file, or you can add it later
 ```
 
@@ -227,7 +227,7 @@ ls -l /home/partnersystems_main/app/certs/singlestore_bundle.pem
 ### 4.1 Create .env File
 
 ```bash
-sudo nano /home/partnersystems_main/app/.env
+sudo nano /home/partnersystems/app/.env
 ```
 
 **Add the following configuration (edit the SingleStore values):**
@@ -235,7 +235,7 @@ sudo nano /home/partnersystems_main/app/.env
 ```env
 # Application
 NODE_ENV=production
-PORT=3008
+PORT=3006
 
 # SingleStore Database - REPLACE WITH YOUR CREDENTIALS
 SINGLESTORE_HOST=svc-xxxxx-xxxx.svc.singlestore.com
@@ -252,7 +252,7 @@ DB_POOL_SIZE=10
 DB_CONNECTION_TIMEOUT=20000
 
 # SSL Configuration
-SSL_CERT_PATH=/home/partnersystems_main/app/certs/singlestore_bundle.pem
+SSL_CERT_PATH=/home/partnersystems/app/certs/singlestore_bundle.pem
 SSL_REJECT_UNAUTHORIZED=false
 ```
 
@@ -268,17 +268,17 @@ openssl rand -base64 32
 **Copy the output and update SESSION_SECRET in .env file:**
 
 ```bash
-sudo nano /home/partnersystems_main/app/.env
+sudo nano /home/partnersystems/app/.env
 # Replace SESSION_SECRET value with the generated string
 ```
 
 **Test:**
 ```bash
 # Verify .env file exists and has content
-sudo cat /home/partnersystems_main/app/.env | grep SINGLESTORE_HOST
+sudo cat /home/partnersystems/app/.env | grep SINGLESTORE_HOST
 # Should show your SingleStore host
 
-sudo cat /home/partnersystems_main/app/.env | grep SESSION_SECRET
+sudo cat /home/partnersystems/app/.env | grep SESSION_SECRET
 # Should show your session secret (not the placeholder)
 ```
 
@@ -289,45 +289,45 @@ sudo cat /home/partnersystems_main/app/.env | grep SESSION_SECRET
 ### 5.1 Set Ownership
 
 ```bash
-sudo chown -R partnersystems_main:partnersystems_main /home/partnersystems_main
+sudo chown -R partnersystems:partnersystems /home/partnersystems
 ```
 
 **Test:**
 ```bash
-ls -ld /home/partnersystems_main/app
-# Should show partnersystems_main partnersystems_main as owner
+ls -ld /home/partnersystems/app
+# Should show partnersystems partnersystems as owner
 
-ls -l /home/partnersystems_main/app/.env
-# Should show partnersystems_main partnersystems_main as owner
+ls -l /home/partnersystems/app/.env
+# Should show partnersystems partnersystems as owner
 ```
 
 ### 5.2 Set Secure Permissions
 
 ```bash
 # Secure home directory
-sudo chmod 700 /home/partnersystems_main
+sudo chmod 700 /home/partnersystems
 
 # App directory readable
-sudo chmod 755 /home/partnersystems_main/app
+sudo chmod 755 /home/partnersystems/app
 
 # Logs directory writable
-sudo chmod 755 /home/partnersystems_main/logs
+sudo chmod 755 /home/partnersystems/logs
 
 # .env file secret (only owner can read/write)
-sudo chmod 600 /home/partnersystems_main/app/.env
+sudo chmod 600 /home/partnersystems/app/.env
 
 # SSL certificate readable
-sudo chmod 644 /home/partnersystems_main/app/certs/singlestore_bundle.pem 2>/dev/null || true
+sudo chmod 644 /home/partnersystems/app/certs/singlestore_bundle.pem 2>/dev/null || true
 ```
 
 **Test:**
 ```bash
 # Verify .env is protected
-ls -l /home/partnersystems_main/app/.env
+ls -l /home/partnersystems/app/.env
 # Should show: -rw------- (600 permissions)
 
 # Verify home directory is secure
-ls -ld /home/partnersystems_main
+ls -ld /home/partnersystems
 # Should show: drwx------ (700 permissions)
 ```
 
@@ -338,50 +338,50 @@ ls -ld /home/partnersystems_main
 ### 6.1 Install Node Modules
 
 ```bash
-cd /home/partnersystems_main/app
-sudo -u partnersystems_main npm install
+cd /home/partnersystems/app
+sudo -u partnersystems npm install
 ```
 
 **Test:**
 ```bash
 # Verify node_modules was created
-ls -d /home/partnersystems_main/app/node_modules
+ls -d /home/partnersystems/app/node_modules
 # Should show the directory
 
 # Count installed packages
-ls /home/partnersystems_main/app/node_modules | wc -l
+ls /home/partnersystems/app/node_modules | wc -l
 # Should show many packages (hundreds)
 ```
 
 ### 6.2 Build the Application
 
 ```bash
-cd /home/partnersystems_main/app
-sudo -u partnersystems_main npm run build
+cd /home/partnersystems/app
+sudo -u partnersystems npm run build
 ```
 
 **Test:**
 ```bash
 # Verify build output exists
-ls -la /home/partnersystems_main/app/dist
+ls -la /home/partnersystems/app/dist
 # Should show: public/ directory with built files
 
 # Check for index.html
-ls -l /home/partnersystems_main/app/dist/public/index.html
+ls -l /home/partnersystems/app/dist/public/index.html
 # Should show the file
 ```
 
 ### 6.3 Prune Development Dependencies (Optional, for Production)
 
 ```bash
-cd /home/partnersystems_main/app
-sudo -u partnersystems_main npm prune --production
+cd /home/partnersystems/app
+sudo -u partnersystems npm prune --production
 ```
 
 **Test:**
 ```bash
 # Verify dev dependencies removed (package size should be smaller)
-du -sh /home/partnersystems_main/app/node_modules
+du -sh /home/partnersystems/app/node_modules
 # Compare to previous size
 ```
 
@@ -392,8 +392,8 @@ du -sh /home/partnersystems_main/app/node_modules
 ### 7.1 Run Database Health Check
 
 ```bash
-cd /home/partnersystems_main/app
-sudo -u partnersystems_main node deployment/scripts/test-db.js
+cd /home/partnersystems/app
+sudo -u partnersystems node deployment/scripts/test-db.js
 ```
 
 **Expected Output:**
@@ -441,7 +441,7 @@ Database Info:
 2. **Authentication failed:**
    ```bash
    # Verify credentials in .env
-   sudo nano /home/partnersystems_main/app/.env
+   sudo nano /home/partnersystems/app/.env
    ```
 
 3. **Database not found:**
@@ -459,13 +459,13 @@ Database Info:
 ### 8.1 Copy PM2 Configuration
 
 ```bash
-sudo cp /home/partnersystems_main/app/deployment/configs/ecosystem.config.cjs /home/partnersystems_main/app/
+sudo cp /home/partnersystems/app/deployment/configs/ecosystem.config.cjs /home/partnersystems/app/
 ```
 
 **Test:**
 ```bash
 # Verify config file
-cat /home/partnersystems_main/app/ecosystem.config.cjs | grep partnersystems_main
+cat /home/partnersystems/app/ecosystem.config.cjs | grep partnersystems
 # Should show app name configuration
 ```
 
@@ -473,21 +473,21 @@ cat /home/partnersystems_main/app/ecosystem.config.cjs | grep partnersystems_mai
 
 ```bash
 # Remove any existing PM2 process
-sudo -u partnersystems_main pm2 delete partnersystems_main 2>/dev/null || true
+sudo -u partnersystems pm2 delete partnersystems 2>/dev/null || true
 
 # Start the application
-cd /home/partnersystems_main/app
-sudo -u partnersystems_main pm2 start ecosystem.config.cjs
+cd /home/partnersystems/app
+sudo -u partnersystems pm2 start ecosystem.config.cjs
 ```
 
 **Test:**
 ```bash
 # Check PM2 status
-sudo -u partnersystems_main pm2 status
-# Should show: partnersystems_main | online
+sudo -u partnersystems pm2 status
+# Should show: partnersystems | online
 
 # Check logs for successful start
-sudo -u partnersystems_main pm2 logs partnersystems_main --lines 30
+sudo -u partnersystems pm2 logs partnersystems --lines 30
 # Should show: "Successfully connected to SingleStore database"
 # Should show: "serving on port 5000" (internal Express port)
 ```
@@ -495,35 +495,35 @@ sudo -u partnersystems_main pm2 logs partnersystems_main --lines 30
 ### 8.3 Save PM2 Configuration
 
 ```bash
-sudo -u partnersystems_main pm2 save
+sudo -u partnersystems pm2 save
 ```
 
 **Test:**
 ```bash
 # Verify PM2 saved list
-sudo -u partnersystems_main pm2 list
-# Should show partnersystems_main in the list
+sudo -u partnersystems pm2 list
+# Should show partnersystems in the list
 ```
 
 ### 8.4 Configure PM2 Startup Script
 
 ```bash
 # Generate startup script
-sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u partnersystems_main --hp /home/partnersystems_main
+sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u partnersystems --hp /home/partnersystems
 ```
 
 **Test:**
 ```bash
 # Verify PM2 will start on boot
-sudo systemctl status pm2-partnersystems_main
+sudo systemctl status pm2-partnersystems
 # Should show: loaded (it will be inactive until reboot, that's OK)
 ```
 
 ### 8.5 Test Application Locally
 
 ```bash
-# Test if app responds on port 3008
-curl -I http://localhost:3008
+# Test if app responds on port 3006
+curl -I http://localhost:3006
 ```
 
 **Expected Output:**
@@ -535,7 +535,7 @@ HTTP/1.1 200 OK
 **If you get "Connection refused":**
 ```bash
 # Check PM2 logs for errors
-sudo -u partnersystems_main pm2 logs partnersystems_main --err --lines 50
+sudo -u partnersystems pm2 logs partnersystems --err --lines 50
 ```
 
 ---
@@ -545,27 +545,27 @@ sudo -u partnersystems_main pm2 logs partnersystems_main --err --lines 50
 ### 9.1 Copy Nginx Configuration
 
 ```bash
-sudo cp /home/partnersystems_main/app/deployment/configs/nginx-partnersystems.conf /etc/nginx/sites-available/partnersystems_main
+sudo cp /home/partnersystems/app/deployment/configs/nginx-partnersystems.conf /etc/nginx/sites-available/partnersystems
 ```
 
 **Test:**
 ```bash
 # Verify config file exists
-cat /etc/nginx/sites-available/partnersystems_main | grep server_name
+cat /etc/nginx/sites-available/partnersystems | grep server_name
 # Should show: partnersystems.online www.partnersystems.online
 ```
 
 ### 9.2 Enable the Site
 
 ```bash
-sudo ln -sf /etc/nginx/sites-available/partnersystems_main /etc/nginx/sites-enabled/
+sudo ln -sf /etc/nginx/sites-available/partnersystems /etc/nginx/sites-enabled/
 ```
 
 **Test:**
 ```bash
 # Verify symlink created
-ls -l /etc/nginx/sites-enabled/partnersystems_main
-# Should show: -> /etc/nginx/sites-available/partnersystems_main
+ls -l /etc/nginx/sites-enabled/partnersystems
+# Should show: -> /etc/nginx/sites-available/partnersystems
 ```
 
 ### 9.3 Test Nginx Configuration
@@ -585,7 +585,7 @@ nginx: configuration file /etc/nginx/nginx.conf test is successful
 # Check for syntax errors
 sudo nginx -t
 # Fix any errors in the config file
-sudo nano /etc/nginx/sites-available/partnersystems_main
+sudo nano /etc/nginx/sites-available/partnersystems
 ```
 
 ### 9.4 Reload Nginx
@@ -731,11 +731,11 @@ curl -I https://partnersystems.online
 
 ```bash
 # Check PM2 status
-sudo -u partnersystems_main pm2 status
-# Should show: partnersystems_main | online | 0 restarts
+sudo -u partnersystems pm2 status
+# Should show: partnersystems | online | 0 restarts
 
 # View recent logs
-sudo -u partnersystems_main pm2 logs partnersystems_main --lines 50 --nostream
+sudo -u partnersystems pm2 logs partnersystems --lines 50 --nostream
 # Should show successful database connections, no errors
 ```
 
@@ -743,8 +743,8 @@ sudo -u partnersystems_main pm2 logs partnersystems_main --lines 50 --nostream
 
 ```bash
 # Re-run database test
-cd /home/partnersystems_main/app
-sudo -u partnersystems_main node deployment/scripts/test-db.js
+cd /home/partnersystems/app
+sudo -u partnersystems node deployment/scripts/test-db.js
 # Should show: ✓ Database health check PASSED
 ```
 
@@ -752,7 +752,7 @@ sudo -u partnersystems_main node deployment/scripts/test-db.js
 
 ```bash
 # Test local port
-curl -I http://localhost:3008
+curl -I http://localhost:3006
 # Should show: HTTP/1.1 200 OK
 
 # Test domain HTTPS
@@ -776,7 +776,7 @@ sudo certbot certificates | grep partnersystems.online -A 5
 
 ```bash
 # Check all ports are still running
-sudo netstat -tlnp | grep -E ':(8000|3001|3002|3003|3004|3005|3006|3007|3008)'
+sudo netstat -tlnp | grep -E ':(8000|3001|3002|3003|3004|3005|3006|3007|3006)'
 
 # Should see:
 # :8000 (FreePaper)
@@ -786,7 +786,7 @@ sudo netstat -tlnp | grep -E ':(8000|3001|3002|3003|3004|3005|3006|3007|3008)'
 # :3005 (TopTeachers)
 # :3006 (PartnerSystems)
 # :3007 (SiahRokh)
-# :3008 (partnersystems_main) <- NEW
+# :3006 (partnersystems) <- NEW
 ```
 
 ### 12.6 Browser Test (Final)
@@ -805,67 +805,67 @@ Verify:
 
 ### View Application Status
 ```bash
-sudo -u partnersystems_main pm2 status
+sudo -u partnersystems pm2 status
 ```
 
 ### View Live Logs
 ```bash
-sudo -u partnersystems_main pm2 logs partnersystems_main
+sudo -u partnersystems pm2 logs partnersystems
 ```
 
 ### View Last 100 Log Lines
 ```bash
-sudo -u partnersystems_main pm2 logs partnersystems_main --lines 100 --nostream
+sudo -u partnersystems pm2 logs partnersystems --lines 100 --nostream
 ```
 
 ### Restart Application
 ```bash
-sudo -u partnersystems_main pm2 restart partnersystems_main
+sudo -u partnersystems pm2 restart partnersystems
 ```
 
 ### Stop Application
 ```bash
-sudo -u partnersystems_main pm2 stop partnersystems_main
+sudo -u partnersystems pm2 stop partnersystems
 ```
 
 ### Start Application
 ```bash
-sudo -u partnersystems_main pm2 start partnersystems_main
+sudo -u partnersystems pm2 start partnersystems
 ```
 
 ### Test Database Connection
 ```bash
-cd /home/partnersystems_main/app
-sudo -u partnersystems_main node deployment/scripts/test-db.js
+cd /home/partnersystems/app
+sudo -u partnersystems node deployment/scripts/test-db.js
 ```
 
 ### Update Database Configuration
 ```bash
 # Use the update script (recommended)
-sudo bash /home/partnersystems_main/app/deployment/scripts/update-config.sh
+sudo bash /home/partnersystems/app/deployment/scripts/update-config.sh
 
 # Or manually:
 # 1. Edit .env
-sudo nano /home/partnersystems_main/app/.env
+sudo nano /home/partnersystems/app/.env
 # 2. Test connection
-cd /home/partnersystems_main/app && sudo -u partnersystems_main node deployment/scripts/test-db.js
+cd /home/partnersystems/app && sudo -u partnersystems node deployment/scripts/test-db.js
 # 3. Restart app
-sudo -u partnersystems_main pm2 restart partnersystems_main
+sudo -u partnersystems pm2 restart partnersystems
 ```
 
 ### Rollback Configuration
 ```bash
 # Use rollback script
-sudo bash /home/partnersystems_main/app/deployment/scripts/rollback.sh
+sudo bash /home/partnersystems/app/deployment/scripts/rollback.sh
 ```
 
 ### View Nginx Logs
 ```bash
 # Access log
-sudo tail -f /var/log/nginx/partnersystems_main_access.log
+sudo tail -f /var/log/nginx/partnersystems_access.log
 
 # Error log
-sudo tail -f /var/log/nginx/partnersystems_main_error.log
+sudo tail -f /var/log/nginx/partnersystems_error.log
 ```
 
 ### Renew SSL Certificate (Manual)
@@ -884,26 +884,26 @@ sudo certbot renew
 ### App Won't Start
 ```bash
 # Check PM2 logs for errors
-sudo -u partnersystems_main pm2 logs partnersystems_main --err
+sudo -u partnersystems pm2 logs partnersystems --err
 
 # Check if .env file has all required variables
-sudo cat /home/partnersystems_main/app/.env | grep SINGLESTORE
+sudo cat /home/partnersystems/app/.env | grep SINGLESTORE
 
-# Verify port 3008 is available
-sudo netstat -tlnp | grep :3008
+# Verify port 3006 is available
+sudo netstat -tlnp | grep :3006
 ```
 
 ### Database Connection Fails
 ```bash
 # Run database test
-cd /home/partnersystems_main/app
-sudo -u partnersystems_main node deployment/scripts/test-db.js
+cd /home/partnersystems/app
+sudo -u partnersystems node deployment/scripts/test-db.js
 
 # Check VPS IP is whitelisted in SingleStore
 curl -4 ifconfig.me
 
 # Verify credentials
-sudo nano /home/partnersystems_main/app/.env
+sudo nano /home/partnersystems/app/.env
 ```
 
 ### SSL Certificate Issues
@@ -919,20 +919,20 @@ sudo certbot renew --dry-run
 
 ### Port Conflicts
 ```bash
-# Find what's using port 3008
-sudo lsof -i :3008
+# Find what's using port 3006
+sudo lsof -i :3006
 
 # Change port in these files:
-# 1. /home/partnersystems_main/app/.env (PORT=3008)
-# 2. /home/partnersystems_main/app/ecosystem.config.cjs
-# 3. /etc/nginx/sites-available/partnersystems_main
+# 1. /home/partnersystems/app/.env (PORT=3006)
+# 2. /home/partnersystems/app/ecosystem.config.cjs
+# 3. /etc/nginx/sites-available/partnersystems
 ```
 
 ---
 
 ## Security Checklist
 
-- [x] Application runs as non-root user (partnersystems_main)
+- [x] Application runs as non-root user (partnersystems)
 - [x] .env file permissions set to 600 (owner-only)
 - [x] Home directory permissions set to 700 (owner-only)
 - [x] Database connection uses SSL/TLS
@@ -948,12 +948,12 @@ Your application is now running at **https://partnersystems.online**
 
 **Architecture:**
 ```
-Internet → Cloudflare (optional) → Nginx (port 443) → Node.js (port 3008) → SingleStore DB
+Internet → Cloudflare (optional) → Nginx (port 443) → Node.js (port 3006) → SingleStore DB
 ```
 
 **Key Information:**
-- User: partnersystems_main
-- Port: 3008
-- App Directory: /home/partnersystems_main/app
-- Logs: /home/partnersystems_main/logs
+- User: partnersystems
+- Port: 3006
+- App Directory: /home/partnersystems/app
+- Logs: /home/partnersystems/logs
 - Domain: partnersystems.online
