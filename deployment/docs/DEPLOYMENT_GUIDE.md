@@ -450,14 +450,19 @@ Database Info:
 ### 8.1 Copy PM2 Configuration
 
 ```bash
+# Pull latest changes (includes fixed ecosystem config)
+cd /home/partnersystems/app
+sudo -u partnersystems git pull origin main
+
+# Copy PM2 configuration
 sudo cp /home/partnersystems/app/deployment/configs/ecosystem.config.cjs /home/partnersystems/app/
 ```
 
 **Test:**
 ```bash
-# Verify config file
-cat /home/partnersystems/app/ecosystem.config.cjs | grep partnersystems
-# Should show app name configuration
+# Verify config file points to dist/index.js
+cat /home/partnersystems/app/ecosystem.config.cjs | grep "script:"
+# Should show: script: 'dist/index.js'
 ```
 
 ### 8.2 Start Application with PM2

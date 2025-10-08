@@ -1,7 +1,7 @@
 module.exports = {
   apps: [{
     name: 'partnersystems',
-    script: 'server/index.js',
+    script: 'dist/index.js',
     cwd: '/home/partnersystems/app',
     instances: 1,
     exec_mode: 'cluster',
