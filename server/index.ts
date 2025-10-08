@@ -1,9 +1,7 @@
 import { config } from "dotenv";
 
-// Load environment variables in production
-if (process.env.NODE_ENV === "production") {
-  config();
-}
+// Load environment variables FIRST (before any other imports that might use them)
+config();
 
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";

@@ -1,0 +1,33 @@
+partnersystems@FreePaper:~/app$ sudo -u partnersystems pm2 restart partnersystems --update-env
+[PM2] Applying action restartProcessId on app [partnersystems](ids: [ 0 ])
+[PM2] [partnersystems](0) ✓
+┌────┬───────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name              │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼───────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ partnersystems    │ default     │ 1.0.0   │ cluster │ 1620184  │ 0s     │ 2    │ online    │ 0%       │ 40.4mb   │ par… │ disabled │
+└────┴───────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+partnersystems@FreePaper:~/app$ sudo -u partnersystems pm2 logs partnersystems --lines 30
+[TAILING] Tailing last 30 lines for [partnersystems] process (change the value with --lines option)
+/home/partnersystems/logs/out.log last 30 lines:
+/home/partnersystems/logs/error.log last 30 lines:
+0|partners | You have triggered an unhandledRejection, you may have forgotten to catch a Promise rejection:
+0|partners | Error: SINGLESTORE_HOST environment variable is not set
+0|partners |     at file:///home/partnersystems/app/dist/index.js:41:9
+0|partners |     at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+0|partners |     at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+0|partners | You have triggered an unhandledRejection, you may have forgotten to catch a Promise rejection:
+0|partners | Error: SINGLESTORE_HOST environment variable is not set
+0|partners |     at file:///home/partnersystems/app/dist/index.js:41:9
+0|partners |     at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+0|partners |     at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+0|partners | You have triggered an unhandledRejection, you may have forgotten to catch a Promise rejection:
+0|partners | Error: SINGLESTORE_HOST environment variable is not set
+0|partners |     at file:///home/partnersystems/app/dist/index.js:42:9
+0|partners |     at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+0|partners |     at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+0|partners | You have triggered an unhandledRejection, you may have forgotten to catch a Promise rejection:
+0|partners | Error: SINGLESTORE_HOST environment variable is not set
+0|partners |     at file:///home/partnersystems/app/dist/index.js:42:9
+0|partners |     at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+0|partners |     at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+
