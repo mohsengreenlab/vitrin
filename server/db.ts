@@ -47,7 +47,8 @@ pool.getConnection()
     connection.release();
   })
   .catch(error => {
-    console.error("✗ Failed to connect to SingleStore database:", error.message);
+    console.error("✗ Failed to connect to SingleStore database:");
+    console.error(error);
     process.exit(1);
   });
 
