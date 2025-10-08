@@ -374,8 +374,16 @@ du -sh /home/partnersystems/app/node_modules
 
 ### 7.1 Run Database Health Check
 
+**Note:** Ensure you have the latest code from GitHub that includes the `dotenv` dependency.
+
 ```bash
 cd /home/partnersystems/app
+
+# If you get "Cannot find package 'dotenv'" error, pull latest changes:
+sudo -u partnersystems git pull origin main
+sudo -u partnersystems npm install
+
+# Run the database health check
 sudo -u partnersystems node deployment/scripts/test-db.js
 ```
 
