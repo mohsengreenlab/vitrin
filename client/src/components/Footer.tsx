@@ -1,4 +1,4 @@
-import { Mail, MapPin, Linkedin, Twitter, Github } from 'lucide-react';
+import { Mail } from 'lucide-react';
 
 export default function Footer() {
   const scrollToSection = (id: string) => {
@@ -70,41 +70,7 @@ export default function Footer() {
                   info@partnersystems.com
                 </a>
               </li>
-              <li className="flex items-center gap-2 text-sm text-muted-foreground">
-                <MapPin className="w-4 h-4" />
-                <span>San Francisco, CA</span>
-              </li>
             </ul>
-          </div>
-
-          <div>
-            <h4 className="font-semibold mb-4">Follow Us</h4>
-            <div className="flex gap-3">
-              <a
-                href="#"
-                className="w-10 h-10 rounded-full flex items-center justify-center hover-elevate active-elevate-2 border border-border"
-                aria-label="LinkedIn"
-                data-testid="link-linkedin"
-              >
-                <Linkedin className="w-5 h-5" />
-              </a>
-              <a
-                href="#"
-                className="w-10 h-10 rounded-full flex items-center justify-center hover-elevate active-elevate-2 border border-border"
-                aria-label="Twitter"
-                data-testid="link-twitter"
-              >
-                <Twitter className="w-5 h-5" />
-              </a>
-              <a
-                href="#"
-                className="w-10 h-10 rounded-full flex items-center justify-center hover-elevate active-elevate-2 border border-border"
-                aria-label="GitHub"
-                data-testid="link-github"
-              >
-                <Github className="w-5 h-5" />
-              </a>
-            </div>
           </div>
         </div>
 
