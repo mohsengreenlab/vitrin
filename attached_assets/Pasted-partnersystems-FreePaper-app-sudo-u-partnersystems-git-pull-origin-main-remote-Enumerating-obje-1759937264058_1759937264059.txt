@@ -1,0 +1,69 @@
+partnersystems@FreePaper:~/app$ sudo -u partnersystems git pull origin main
+remote: Enumerating objects: 10, done.
+remote: Counting objects: 100% (10/10), done.
+remote: Compressing objects: 100% (2/2), done.
+remote: Total 6 (delta 4), reused 6 (delta 4), pack-reused 0 (from 0)
+Unpacking objects: 100% (6/6), 1.66 KiB | 567.00 KiB/s, done.
+From https://github.com/mohsengreenlab/vitrin
+ * branch            main       -> FETCH_HEAD
+   708cecd..60750bf  main       -> origin/main
+Updating 708cecd..60750bf
+Fast-forward
+ .../Pasted-partnersystems-FreePaper-app-sudo-cp-home-partnersystems-app-deployment-configs-ecosystem-config-1759937147051_1759937147052.txt         | 29 +++++++++++++++++++++++++++++
+ server/index.ts                                                                                                                                     |  7 +++++++
+ 2 files changed, 36 insertions(+)
+ create mode 100644 attached_assets/Pasted-partnersystems-FreePaper-app-sudo-cp-home-partnersystems-app-deployment-configs-ecosystem-config-1759937147051_1759937147052.txt
+partnersystems@FreePaper:~/app$ sudo -u partnersystems npm run build
+
+> rest-express@1.0.0 build
+> vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+
+vite v5.4.20 building for production...
+transforming (2) ../vite/modulepreload-polyfill.jsBrowserslist: browsers data (caniuse-lite) is 12 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+
+A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+✓ 1819 modules transformed.
+../dist/public/index.html                                                            1.29 kB │ gzip:   0.62 kB
+../dist/public/assets/Consumer_applications_imagery_361b4cfa-DOOkABqZ.png          875.31 kB
+../dist/public/assets/Modular_solutions_concept_675dcd51-BiU5oVaz.png            1,019.33 kB
+../dist/public/assets/Business_productivity_tools_imagery_e7d30c67-DaE6buoz.png  1,496.57 kB
+../dist/public/assets/Hero_tech_office_imagery_ada79e19-DQ9qw2NY.png             1,544.74 kB
+../dist/public/assets/Communication_collaboration_imagery_f128a9e9-BamEluFB.png  1,557.23 kB
+../dist/public/assets/Data_storage_solutions_imagery_0bdbbf87-xgSP8S2F.png       1,557.40 kB
+../dist/public/assets/index-26fab8EH.css                                            76.39 kB │ gzip:  12.25 kB
+../dist/public/assets/index-CvQ1QsCC.js                                            438.40 kB │ gzip: 139.94 kB
+✓ built in 10.52s
+
+  dist/index.js  10.9kb
+
+⚡ Done in 16ms
+partnersystems@FreePaper:~/app$ sudo -u partnersystems pm2 restart partnersystems
+Use --update-env to update environment variables
+[PM2] Applying action restartProcessId on app [partnersystems](ids: [ 0 ])
+[PM2] [partnersystems](0) ✓
+┌────┬───────────────────┬─────────────┬─────────┬─────────┬──────────┬────────┬──────┬───────────┬──────────┬──────────┬──────────┬──────────┐
+│ id │ name              │ namespace   │ version │ mode    │ pid      │ uptime │ ↺    │ status    │ cpu      │ mem      │ user     │ watching │
+├────┼───────────────────┼─────────────┼─────────┼─────────┼──────────┼────────┼──────┼───────────┼──────────┼──────────┼──────────┼──────────┤
+│ 0  │ partnersystems    │ default     │ 1.0.0   │ cluster │ 1614998  │ 0s     │ 1    │ online    │ 0%       │ 40.4mb   │ par… │ disabled │
+└────┴───────────────────┴─────────────┴─────────┴─────────┴──────────┴────────┴──────┴───────────┴──────────┴──────────┴──────────┴──────────┘
+partnersystems@FreePaper:~/app$ sudo -u partnersystems pm2 logs partnersystems --lines 30
+[TAILING] Tailing last 30 lines for [partnersystems] process (change the value with --lines option)
+/home/partnersystems/logs/out.log last 30 lines:
+/home/partnersystems/logs/error.log last 30 lines:
+0|partners | You have triggered an unhandledRejection, you may have forgotten to catch a Promise rejection:
+0|partners | Error: SINGLESTORE_HOST environment variable is not set
+0|partners |     at file:///home/partnersystems/app/dist/index.js:41:9
+0|partners |     at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+0|partners |     at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+0|partners | You have triggered an unhandledRejection, you may have forgotten to catch a Promise rejection:
+0|partners | Error: SINGLESTORE_HOST environment variable is not set
+0|partners |     at file:///home/partnersystems/app/dist/index.js:41:9
+0|partners |     at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+0|partners |     at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
+0|partners | You have triggered an unhandledRejection, you may have forgotten to catch a Promise rejection:
+0|partners | Error: SINGLESTORE_HOST environment variable is not set
+0|partners |     at file:///home/partnersystems/app/dist/index.js:42:9
+0|partners |     at ModuleJob.run (node:internal/modules/esm/module_job:325:25)
+0|partners |     at async ModuleLoader.import (node:internal/modules/esm/loader:606:24)
