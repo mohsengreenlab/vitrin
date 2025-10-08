@@ -23,6 +23,16 @@ if (!process.env.SINGLESTORE_DATABASE) {
 const sslCertPath = path.join(process.cwd(), "certs", "singlestore_bundle.pem");
 const sslCA = fs.existsSync(sslCertPath) ? fs.readFileSync(sslCertPath) : undefined;
 
+// SSL configuration - always use SSL for SingleStore connections
+const sslConfig = sslCA ? {
+  ca: sslCA,
+  rejectUnauthorized: true,
+} : {
+  rejectUnauthorized: false,
+};
+
+console.log("Connecting to SingleStore with SSL enabled", sslCA ? "(with certificate verification)" : "(without certificate verification)");
+
 const pool = mysql.createPool({
   host: process.env.SINGLESTORE_HOST,
   port: parseInt(process.env.SINGLESTORE_PORT || "3306"),
@@ -33,12 +43,7 @@ const pool = mysql.createPool({
   connectionLimit: 10,
   queueLimit: 0,
   connectTimeout: 20000,
-  ssl: sslCA ? {
-    ca: sslCA,
-    rejectUnauthorized: true,
-  } : {
-    rejectUnauthorized: false,
-  },
+  ssl: sslConfig,
 });
 
 pool.getConnection()
