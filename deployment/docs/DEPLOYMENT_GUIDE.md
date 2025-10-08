@@ -137,18 +137,18 @@ ls -ld /home/partnersystems
 # Should show directory with partnersystems owner
 ```
 
-### 2.2 Create Application Directories
+### 2.2 Create Logs Directory
 
 ```bash
-sudo mkdir -p /home/partnersystems/app
 sudo mkdir -p /home/partnersystems/logs
-sudo mkdir -p /home/partnersystems/app/certs
 ```
+
+**Note:** The app directory will be created automatically when cloning from GitHub in Step 3.
 
 **Test:**
 ```bash
 ls -la /home/partnersystems/
-# Should show: app/ and logs/ directories
+# Should show: logs/ directory
 ```
 
 ---
@@ -170,11 +170,14 @@ git --version
 ### 3.2 Clone Repository
 
 ```bash
-# Clone the repository directly into the app directory
-sudo git clone https://github.com/YOUR_USERNAME/YOUR_REPO.git /home/partnersystems/app
+# Remove app directory if it exists (to avoid clone errors)
+sudo rm -rf /home/partnersystems/app
+
+# Clone the repository
+sudo git clone https://github.com/mohsengreenlab/vitrin.git /home/partnersystems/app
 ```
 
-**Note:** Replace `YOUR_USERNAME/YOUR_REPO` with your actual GitHub repository path.
+**Note:** This removes any existing app directory and clones fresh from GitHub.
 
 **Test:**
 ```bash

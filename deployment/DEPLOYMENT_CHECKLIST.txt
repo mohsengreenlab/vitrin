@@ -35,11 +35,10 @@ STEP 2: CREATE USER AND DIRECTORIES
 ------------------------------------
 [ ] User created: sudo useradd -m -s /bin/bash partnersystems
     [ ] Test: id partnersystems (should show uid and gid)
-[ ] Directories created:
-    [ ] /home/partnersystems/app
+[ ] Logs directory created:
     [ ] /home/partnersystems/logs
-    [ ] /home/partnersystems/app/certs
     [ ] Test: ls -la /home/partnersystems/
+    [ ] Note: app/ will be created by git clone in Step 3
 
 STEP 3: CLONE APPLICATION FROM GITHUB
 --------------------------------------
