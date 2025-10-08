@@ -1,8 +1,12 @@
+import { config } from "dotenv";
 import mysql from "mysql2/promise";
 import { drizzle } from "drizzle-orm/mysql2";
 import * as schema from "@shared/schema";
 import fs from "fs";
 import path from "path";
+
+// Load environment variables (safe to call multiple times)
+config();
 
 if (!process.env.SINGLESTORE_HOST) {
   throw new Error("SINGLESTORE_HOST environment variable is not set");
